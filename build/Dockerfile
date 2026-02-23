@@ -10,13 +10,7 @@ COPY . /${appName}
 WORKDIR /${appName}
 COPY go.mod .
 COPY go.sum .
-RUN mkdir ~/.ssh/ && \
-    apk update; \
-    apk upgrade; \
-    apk --update add git make gcc musl-dev openssh; \
-    chmod 700 ~/.ssh && \
-    ssh-keyscan gitlab.sicepat.tech > ~/.ssh/known_hosts && \
-    git config --global url."git@gitlab.sicepat.tech:".insteadOf "https://gitlab.sicepat.tech/"
+
 RUN --mount=type=ssh GO111MODULE=on go mod download
 # COPY . /${appName}
 # RUN go install github.com/swaggo/swag/cmd/swag && swag init

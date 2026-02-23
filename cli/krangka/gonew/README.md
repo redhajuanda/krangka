@@ -33,10 +33,10 @@ krangka new <package-name> [project-name] [options]
 
 ```bash
 # Basic usage
-krangka new gitlab.sicepat.tech/mycompany/myapp myapp
+krangka new github.com/redhajuanda/myapp myapp
 
 # With custom source module
-krangka new gitlab.sicepat.tech/mycompany/myapp myapp -m github.com/redhajuanda/krangka
+krangka new github.com/redhajuanda/myapp myapp -m github.com/redhajuanda/krangka
 ```
 
 ## Options
@@ -137,7 +137,7 @@ func anotherIncludedFunction() {
 ### Example 1: Basic Project Generation
 
 ```bash
-krangka new gitlab.sicepat.tech/mycompany/myapp myapp
+krangka new github.com/redhajuanda/myapp myapp
 ```
 
 This will:
@@ -149,7 +149,7 @@ This will:
 ### Example 2: Custom Source Module
 
 ```bash
-krangka new gitlab.sicepat.tech/mycompany/myapp myapp -m github.com/redhajuanda/krangka
+krangka new github.com/redhajuanda/myapp myapp -m github.com/redhajuanda/krangka
 ```
 
 This uses a custom source module while still applying the same exclusions.

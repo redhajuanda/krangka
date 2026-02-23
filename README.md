@@ -28,7 +28,7 @@ go install github.com/redhajuanda/krangka/cli/krangka@latest
 Create new project using Krangka CLI:
 ```bash
 # krangka new [package_name] [directory_name]
-krangka new gitlab.sicepat.tech/backoffice/project-x.git project-x
+krangka new github.com/redhajuanda/project-x project-x
 ```
 
 ### Configuration
