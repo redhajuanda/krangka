@@ -1,0 +1,70 @@
+version: "3.8"
+name: krangka
+services:
+  krangka_app_zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: krangka_app_zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - net_app
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  krangka_app_kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: krangka_app_kafka
+    depends_on:
+      - krangka_app_zookeeper
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'krangka_app_zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://krangka_app_kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+    networks:
+      - net_app
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  krangka_app_kafka_ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: krangka_app_kafka_ui
+    depends_on:
+      - krangka_app_kafka
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: krangka_app_kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: krangka_app_zookeeper:2181
+    networks:
+      - net_app
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+networks:
+  net_app:
+    driver: bridge

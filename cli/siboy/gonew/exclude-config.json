@@ -1,0 +1,29 @@
+{
+  "directories": [
+    "cli",
+    ".agent",
+    ".claude",
+    ".cursor",
+    "openspec",
+    ".git",
+    ".vscode",
+    ".idea",
+    "node_modules",
+    "vendor"
+  ],
+  "files": [
+    "*.log",
+    "*.tmp",
+    ".env*",
+    ".gitattributes",
+    "*.swp",
+    "*.swo",
+    "*~",
+    ".DS_Store",
+    "Thumbs.db"
+  ],
+  "code_blocks": [
+    "exclude-start",
+    "exclude-end"
+  ]
+} 
