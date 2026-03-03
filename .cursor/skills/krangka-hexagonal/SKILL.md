@@ -46,6 +46,8 @@ Domain and Service layers must be:
 
 **Purpose**: Pure business entities and value objects
 
+**Layout**: One file per entity in `internal/core/domain/` — flat, not nested. Do not create sub-packages per entity (e.g. avoid `domain/agent/agent.go`; use `domain/agent.go` instead).
+
 **Rules:**
 - NO external dependencies (no HTTP, DB, framework imports)
 - NO JSON tags (use DTOs for serialization)

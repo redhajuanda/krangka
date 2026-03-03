@@ -40,6 +40,3 @@ If you need help with Krangka:
 3. Contact the platform team for support
 
 ---
-
-**Last Updated**: February 2026
-**Version**: 2.0.0 

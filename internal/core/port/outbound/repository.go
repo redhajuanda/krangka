@@ -1,5 +1,7 @@
 package outbound
 
+//go:generate mockgen -source=repository.go -destination=../../../mocks/outbound/mock_repository.go -package=mocks
+
 import (
 	"context"
 
@@ -14,8 +16,6 @@ type Repository interface {
 	PublishOutbox(ctx context.Context, target PublisherTarget, topic string, payload qwery.JSONMap) error
 	// RetryOutbox retries an outbox event
 	RetryOutbox(ctx context.Context) error
-	// GetTodoRepository returns the TodoRepository instance
-	GetTodoRepository() repositories.Todo
 	// GetNoteRepository returns the NoteRepository instance
 	GetNoteRepository() repositories.Note
 }

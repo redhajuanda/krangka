@@ -1,5 +1,7 @@
 package inbound
 
+//go:generate mockgen -source=note.go -destination=../../../mocks/inbound/mock_note.go -package=mocks
+
 import (
 	"context"
 

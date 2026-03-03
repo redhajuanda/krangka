@@ -20,6 +20,9 @@ This hierarchy is non-negotiable. Never trade correctness, security, or data int
 - **Data is the source of truth**: APIs are disposable, data is permanent. Design schemas intentionally. Treat migrations as first-class changes. Never lose or silently corrupt data.
 - **Validate at the edge, enforce at the core**: Defense in depth. Validate input early. Enforce rules in the domain. Never trust upstream validation alone.
 
+### Test-Driven Development
+- **Tests first, then implementation**: Always use TDD. Write all possible test scenarios first, then implement. Tests define expected behavior; implementation satisfies them. Red-green-refactor. This applies to **every new feature** — service tests before service implementation, handler tests before handler implementation. See `04_adding-new-features.md` for the step-by-step flow.
+
 ### Failure & Resilience
 - **Assume failure everywhere**: Everything fails. Design for it. Timeouts are mandatory. Retries must be bounded. Partial failure is normal.
 - **Idempotency over hope**: Clients will retry. Design for duplicates. Safe retries for writes. Exactly-once is a myth. Deduplication beats assumptions.

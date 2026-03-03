@@ -20,7 +20,6 @@ type mariaDBRepository struct {
 	qweryTx qwery.Runable
 	outbox  *Outbox
 
-	TodoRepository portRepo.Todo
 	NoteRepository portRepo.Note
 }
 
@@ -35,7 +34,6 @@ func NewMariaDBRepository(cfg *configs.Config, log logger.Logger, qwery *Qwery, 
 		qwery:  qwery,
 		outbox: NewOutbox(cfg, log, qwery.Client, false, publishers),
 
-		TodoRepository: implRepo.NewTodoRepository(qwery.Client),
 		NoteRepository: implRepo.NewNoteRepository(qwery.Client),
 	}
 }
@@ -49,14 +47,6 @@ func (r *mariaDBRepository) PublishOutbox(ctx context.Context, target outbound.P
 // RetryOutbox retries the outbox entries that are not committed successfully, it should be called by the outbox relay worker
 func (r *mariaDBRepository) RetryOutbox(ctx context.Context) error {
 	return r.outbox.Retry(ctx)
-}
-
-// GetTodoRepository returns the TodoRepository instance
-func (r *mariaDBRepository) GetTodoRepository() portRepo.Todo {
-	if r.qweryTx != nil {
-		return implRepo.NewTodoRepository(r.qweryTx)
-	}
-	return r.TodoRepository
 }
 
 // GetNoteRepository returns the NoteRepository instance

@@ -7,7 +7,6 @@ This document provides a detailed breakdown of the Krangka project structure, ex
 ```
 krangka/
 ├── build/                        # Build output artifacts
-├── cli/                          # CLI tooling (code generator, scaffolding)
 ├── cmd/                          # Application entry points
 ├── configs/                      # Configuration management
 ├── deployment/                   # Deployment configuration files
@@ -324,7 +323,6 @@ Build and utility scripts.
 ```
 scripts/
 └── bash/                         # Bash scripts
-    └── version.sh                # Version management script
 ```
 
 ## Root Files

@@ -8,17 +8,17 @@ import (
 	"github.com/redhajuanda/krangka/internal/adapter/inbound/http/response"
 	"github.com/redhajuanda/krangka/shared/utils"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 // ErrorHandlers centralizes the error handling for the HTTP server
 var ErrorHandlers = func(cfg *configs.Config, log logger.Logger) fiber.ErrorHandler {
 
-	return func(c *fiber.Ctx, err error) error {
+	return func(c fiber.Ctx, err error) error {
 
 		var (
 			responseFailed = response.ResponseFailed{}
-			ctx            = c.UserContext()
+			ctx            = c.Context()
 		)
 
 		if internalErr, ok := err.(*fail.Fail); ok {

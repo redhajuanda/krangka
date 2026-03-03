@@ -72,14 +72,32 @@ krangka-install:
 build:
 	GO111MODULE=on CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ${BINARY} -mod=vendor -a -installsuffix cgo -ldflags '-w'
 
+# command to generate mock
+# example: make mock
+.PHONY: mock
+mock:
+	@if ! command -v mockgen &> /dev/null; then \
+		echo "mockgen not found, installing..."; \
+		go install github.com/golang/mock/mockgen@latest; \
+	fi
+	@go generate ./...
 
+# command to run tests
+# example: make test
+.PHONY: test
 test:
 	go test -v -cover -count=1 -failfast ./... -coverprofile="coverage.out"
 
+# command to install dependencies
+# example: make dependency
+.PHONY: dependency
 dependency:
 	@echo "> Installing the server dependencies ..."
 	@go mod vendor
 
+# command to clean
+# example: make clean
+.PHONY: clean
 clean:
 	if [ -f ${BINARY} ] ; then rm ${BINARY} ; fi
 

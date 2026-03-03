@@ -1,8 +1,11 @@
 package outbound
 
-import (
-	"github.com/redhajuanda/komon/lock"
-)
+import "context"
 
-// DLocker is a contract for distributed lock
-type DLocker lock.DLocker
+// DLocker distributed locker interface
+type DLocker interface {
+	TryLock(ctx context.Context, id string, ttl int) error
+	Lock(ctx context.Context, id string, ttl int) error
+	Unlock(ctx context.Context, id string) error
+	Close() error
+}

@@ -7,7 +7,7 @@ import (
 	"github.com/redhajuanda/komon/pagination"
 	"github.com/redhajuanda/komon/tracer"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 // ResponseSuccess struct
@@ -19,7 +19,7 @@ type ResponseSuccess struct {
 }
 
 // Success responses with a success message and data
-func Success(c *fiber.Ctx, code int, data any, msg ...string) error {
+func Success(c fiber.Ctx, code int, data any, msg ...string) error {
 
 	responseMsg := buildResponseMsg("Success", msg...)
 
@@ -41,16 +41,16 @@ func Success(c *fiber.Ctx, code int, data any, msg ...string) error {
 }
 
 // SuccessOK returns code 200
-func SuccessOK(c *fiber.Ctx, data any, msg ...string) error {
+func SuccessOK(c fiber.Ctx, data any, msg ...string) error {
 	return Success(c, http.StatusOK, data, msg...)
 }
 
 // SuccessCreated returns code 201
-func SuccessCreated(c *fiber.Ctx, data any, msg ...string) error {
+func SuccessCreated(c fiber.Ctx, data any, msg ...string) error {
 	return Success(c, http.StatusCreated, data, msg...)
 }
 
-func SuccessOKWithPagination(c *fiber.Ctx, data any, pagination pagination.Pagination) error {
+func SuccessOKWithPagination(c fiber.Ctx, data any, pagination pagination.Pagination) error {
 
 	if data == nil {
 		data = map[string]any{}

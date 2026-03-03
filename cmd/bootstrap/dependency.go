@@ -23,7 +23,6 @@ import (
 	outboundredisstream "github.com/redhajuanda/krangka/internal/adapter/outbound/redisstream"
 	"github.com/redhajuanda/krangka/internal/core/port/outbound"
 	"github.com/redhajuanda/krangka/internal/core/service/note"
-	"github.com/redhajuanda/krangka/internal/core/service/todo"
 )
 
 // There are 4 types of resources:
@@ -39,7 +38,6 @@ type Dependency struct {
 	migrators          Resource[[]migrate.Migrator]
 	repository         Resource[outbound.Repository]
 	serviceNote        Resource[*note.Service]
-	serviceTodo        Resource[*todo.Service]
 	httpHandlers       Resource[[]http.Handler]
 	subscriberHandlers Resource[[]subscriber.Handler]
 
@@ -204,10 +202,15 @@ func (d *Dependency) GetPublisherKafka() *kafka.Publisher {
 
 func (d *Dependency) GetPublishers() outbound.Publishers {
 	return d.publishers.Resolve(func() outbound.Publishers {
-		return outbound.Publishers{
-			outbound.PublisherTargetRedisstream: d.GetPublisherRedisstream(),
-			outbound.PublisherTargetKafka:       d.GetPublisherKafka(),
+		publishers := outbound.Publishers{}
+		cfg := d.GetConfig()
+		if cfg.Event.Redisstream.Publisher.Enabled {
+			publishers[outbound.PublisherTargetRedisstream] = d.GetPublisherRedisstream()
 		}
+		if cfg.Event.Kafka.Publisher.Enabled {
+			publishers[outbound.PublisherTargetKafka] = d.GetPublisherKafka()
+		}
+		return publishers
 	})
 }
 
@@ -306,20 +309,12 @@ func (d *Dependency) GetServiceNote(repo outbound.Repository) *note.Service {
 	})
 }
 
-// GetServiceTodo resolves and returns the service todo dependency
-func (d *Dependency) GetServiceTodo(repo outbound.Repository) *todo.Service {
-	return d.serviceTodo.Resolve(func() *todo.Service {
-		return todo.NewService(d.GetConfig(), d.GetLogger(), repo, d.GetRedis())
-	})
-}
-
 // GetHTTPHandlers resolves and returns the http handlers dependency
 func (d *Dependency) GetHTTPHandlers() []http.Handler {
 	return d.httpHandlers.Resolve(func() []http.Handler {
 		repo := d.GetRepository(d.GetQweryMain())
 		return []http.Handler{
 			httpHandler.NewNoteHandler(d.GetConfig(), d.GetLogger(), d.GetServiceNote(repo)),
-			httpHandler.NewTodoHandler(d.GetConfig(), d.GetLogger(), d.GetServiceTodo(repo)),
 		}
 	})
 }

@@ -3,14 +3,14 @@ package middleware
 import (
 	"strings"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/redhajuanda/komon/fail"
 	"github.com/redhajuanda/krangka/shared/libctx"
 )
 
 func Auth() fiber.Handler {
 
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 
 		authorization := c.Get(fiber.HeaderAuthorization)
 		if authorization == "" {
@@ -26,11 +26,11 @@ func Auth() fiber.Handler {
 			return fail.New("Unauthorized").WithFailure(fail.ErrUnauthorized)
 		}
 
-		ctx, err := libctx.SetClaims(c.UserContext(), authorizations[1])
+		ctx, err := libctx.SetClaims(c.Context(), authorizations[1])
 		if err != nil {
 			return fail.Wrap(err).WithFailure(fail.ErrUnauthorized)
 		}
-		c.SetUserContext(ctx)
+		c.SetContext(ctx)
 		return c.Next()
 
 	}

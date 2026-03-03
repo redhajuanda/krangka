@@ -5,12 +5,12 @@ import (
 
 	"github.com/redhajuanda/komon/tracer"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/oklog/ulid/v2"
 )
 
 func RequestIDMiddleware() fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 
 		rid := ulid.Make().String()
 		cid := ulid.Make().String()
@@ -19,11 +19,11 @@ func RequestIDMiddleware() fiber.Handler {
 		c.Locals(tracer.RequestIDKey, rid)
 		c.Locals(tracer.CorrelationIDKey, cid)
 
-		// Set to Go std context (c.UserContext)
-		ctx := context.WithValue(c.UserContext(), tracer.RequestIDKey, rid)
+		// Set to Go std context (c.Context)
+		ctx := context.WithValue(c.Context(), tracer.RequestIDKey, rid)
 		ctx = context.WithValue(ctx, tracer.CorrelationIDKey, cid)
 
-		c.SetUserContext(ctx)
+		c.SetContext(ctx)
 
 		// Optionally set header (biar bisa di-trace via curl/postman)
 		c.Set(tracer.RequestIDHeader, rid)

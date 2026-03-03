@@ -120,6 +120,8 @@ event:
   kafka:
     # Kafka publisher configuration
     publisher:
+      # Enable Kafka publisher (required if using outbox with Kafka)
+      enabled: true
       # Kafka brokers
       brokers: ["localhost:9092"]
       # Debug enabled
@@ -142,6 +144,8 @@ event:
   redisstream:
     # Redis stream publisher configuration
     publisher:
+      # Enable Redis stream publisher (default is true)
+      enabled: true
       # Default maximum length of the redis stream
       default_maxlen: 10000
     # Redis stream subscribers configuration

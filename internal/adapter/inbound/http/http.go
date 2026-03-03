@@ -8,7 +8,7 @@ import (
 	"github.com/redhajuanda/komon/tracer"
 	"github.com/redhajuanda/krangka/configs"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 type HTTP struct {
@@ -19,7 +19,7 @@ type HTTP struct {
 }
 
 type Handler interface {
-	RegisterRoutes(app *fiber.App)
+	RegisterRoutes(app fiber.Router)
 }
 
 // NewHTTP creates a new instance of HTTP server
@@ -28,12 +28,10 @@ func NewHTTP(cfg *configs.Config, log logger.Logger, handlers []Handler) *HTTP {
 		cfg: cfg,
 		log: log,
 		router: fiber.New(fiber.Config{
-			EnablePrintRoutes:     cfg.Http.EnablePrintRoutes,
-			ErrorHandler:          ErrorHandlers(cfg, log),
-			DisableStartupMessage: cfg.Http.DisableStartupMessage,
-			ReadTimeout:           cfg.Http.ReadTimeout,
-			WriteTimeout:          cfg.Http.WriteTimeout,
-			IdleTimeout:           cfg.Http.IdleTimeout,
+			ErrorHandler: ErrorHandlers(cfg, log),
+			ReadTimeout:  cfg.Http.ReadTimeout,
+			WriteTimeout: cfg.Http.WriteTimeout,
+			IdleTimeout:  cfg.Http.IdleTimeout,
 		}),
 		handlers: handlers,
 	}
@@ -63,7 +61,10 @@ func (h *HTTP) OnStart(ctx context.Context) error {
 
 	// Start HTTP server in goroutine so we can handle signals and graceful shutdown
 	go func() {
-		if err := h.router.Listen(":" + h.cfg.Http.Port); err != nil {
+		if err := h.router.Listen(":"+h.cfg.Http.Port, fiber.ListenConfig{
+			EnablePrintRoutes:     h.cfg.Http.EnablePrintRoutes,
+			DisableStartupMessage: h.cfg.Http.DisableStartupMessage,
+		}); err != nil {
 			h.log.Errorf("Server stopped: %v", err)
 		}
 	}()

@@ -259,9 +259,11 @@ qwery is the SQL SDK. It provides a fluent builder chain over raw SQL with templ
 | `.WithOrderBy(cols...)` | Prefix `+` for ASC, `-` for DESC. E.g. `"-created_at", "+id"` — **see krangka-pagination for cursor pagination OrderBy rules** |
 | `.ScanStruct(&dest)` | Scan one row into a struct |
 | `.ScanStructs(&dest)` | Scan many rows into a slice |
-| `.Query(ctx)` | Execute — use for **SELECT** (returns `error`) |
-| `.Exec(ctx)` | Execute — use for **INSERT / UPDATE / DELETE** (returns `sql.Result, error`) |
+| `.Query(ctx)` | Execute — use **only** for **SELECT** (returns `error`) |
+| `.Exec(ctx)` | Execute — use **only** for **INSERT / UPDATE / DELETE** (returns `sql.Result, error`) |
 
+> **CRITICAL — Query vs Exec**: Use `.Query(ctx)` for SELECT (reads). Use `.Exec(ctx)` for INSERT, UPDATE, DELETE (writes). Never use `Query` for writes — it is semantically wrong and can cause subtle issues.
+>
 > **OrderBy + cursor pagination**: When using `WithPagination()` + `WithOrderBy()`, the sort order must be deterministic. See **krangka-pagination** for full rules and examples.
 
 ### Template parameters
@@ -453,6 +455,7 @@ If `DoInTransaction` is called while already inside a transaction, the inner cal
   - [ ] Field `qwery qwery.Runable` (not `*qwery.Client`)
   - [ ] `tracer.Trace(ctx)` + `defer span.End()` in every method
   - [ ] `fail.Wrap` on every error; `.WithFailure(fail.ErrNotFound)` for `sql.ErrNoRows`
+  - [ ] Use `.Query(ctx)` for SELECT only; use `.Exec(ctx)` for INSERT, UPDATE, DELETE
 - [ ] **Wire**: add field, constructor init, and getter to `internal/adapter/outbound/mariadb/repository.go`
   - [ ] Getter checks `r.qweryTx != nil` and returns tx-scoped instance
 - [ ] **Service**: use [DoInTransaction](#5-transactions) for mutating operations; always use `repo` (lambda arg) inside the lambda, never `s.repo`. For outbox events, see **krangka-outbox**

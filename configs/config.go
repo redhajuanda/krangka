@@ -108,6 +108,7 @@ type Event struct {
 }
 
 type RedisstreamPublisher struct {
+	Enabled       bool  `yaml:"enabled"`
 	DefaultMaxlen int64 `yaml:"default_maxlen"`
 }
 
@@ -129,6 +130,7 @@ func (r RedisstreamSubscribers) GetByID(id string) *RedisstreamSubscriber {
 }
 
 type KafkaPublisher struct {
+	Enabled      bool     `yaml:"enabled"`
 	Brokers      []string `yaml:"brokers"`
 	DebugEnabled bool     `yaml:"debug_enabled"`
 	TraceEnabled bool     `yaml:"trace_enabled"`

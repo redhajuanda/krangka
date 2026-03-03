@@ -10,7 +10,7 @@ import (
 )
 
 type ReqGetNoteByID struct {
-	ID string `path:"id" validate:"required"`
+	ID string `uri:"id" validate:"required"`
 }
 
 func (r *ReqGetNoteByID) Validate() error {
@@ -61,7 +61,7 @@ func (r *ResCreateNote) Transform(note *domain.Note) {
 }
 
 type ReqUpdateNote struct {
-	ID      string `params:"id" validate:"required" swaggerignore:"true"` // ignore in swagger because it's in the path not in the body
+	ID      string `uri:"id" validate:"required" swaggerignore:"true"` // ignore in swagger because it's in the path not in the body
 	Title   string `json:"title" validate:"required"`
 	Content string `json:"content" validate:"required"`
 }
@@ -80,7 +80,7 @@ func (r *ReqUpdateNote) Transform() *domain.Note {
 }
 
 type ReqDeleteNote struct {
-	ID string `params:"id" validate:"required" swaggerignore:"true"` // ignore in swagger because it's in the path not in the body
+	ID string `uri:"id" validate:"required" swaggerignore:"true"` // ignore in swagger because it's in the path not in the body
 }
 
 func (r *ReqDeleteNote) Validate() error {

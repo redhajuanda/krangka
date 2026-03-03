@@ -1,10 +1,10 @@
 package middleware
 
-import "github.com/gofiber/fiber/v2"
+import "github.com/gofiber/fiber/v3"
 
 func SecurityHeader() fiber.Handler {
 
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		c.Set("X-Frame-Options", "DENY")
 		c.Set("X-Content-Type-Options", "nosniff")
 		c.Set("Strict-Transport-Security", "max-age=16070400; includeSubDomains")

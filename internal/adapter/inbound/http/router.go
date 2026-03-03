@@ -6,9 +6,9 @@ import (
 	"github.com/redhajuanda/krangka/internal/adapter/inbound/http/docs"
 	"github.com/redhajuanda/krangka/internal/adapter/inbound/http/middleware"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/adaptor"
-	"github.com/gofiber/swagger"
+	"github.com/gofiber/contrib/v3/swaggo"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/adaptor"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -38,7 +38,7 @@ func (h *HTTP) RegisterSwaggerRoutes() {
 	h.router.Get("/swagger/doc.json", h.customSwaggerSpec)
 
 	// Serve swagger UI
-	h.router.Get("/docs/*", swagger.New(swagger.Config{
+	h.router.Get("/docs/*", swaggo.New(swaggo.Config{
 		InstanceName:           h.cfg.App.Name,
 		Title:                  h.cfg.App.Name,
 		URL:                    "/swagger/doc.json",
@@ -51,7 +51,7 @@ func (h *HTTP) RegisterSwaggerRoutes() {
 }
 
 // customSwaggerSpec is a custom swagger spec for the HTTP server
-func (h *HTTP) customSwaggerSpec(c *fiber.Ctx) error {
+func (h *HTTP) customSwaggerSpec(c fiber.Ctx) error {
 
 	// Get the original swagger spec
 	spec := docs.SwaggerInfo.ReadDoc()
@@ -68,7 +68,7 @@ func (h *HTTP) customSwaggerSpec(c *fiber.Ctx) error {
 // RegisterHealthCheckRoutes registers the health check routes for the HTTP server
 func (h *HTTP) RegisterHealthCheckRoutes() {
 
-	h.router.Get("/health", func(c *fiber.Ctx) error {
+	h.router.Get("/health", func(c fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusOK)
 	})
 
@@ -82,7 +82,7 @@ func (h *HTTP) RegisterMetricsRoutes() {
 	registry.MustRegister(collectors.NewGoCollector())
 	registry.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
 
-	h.router.Get("/metrics", func(c *fiber.Ctx) error {
+	h.router.Get("/metrics", func(c fiber.Ctx) error {
 
 		handler := promhttp.HandlerFor(registry, promhttp.HandlerOpts{
 			ErrorLog:      nil,

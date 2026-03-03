@@ -8,7 +8,7 @@ import (
 	"github.com/redhajuanda/krangka/internal/adapter/inbound/http/response"
 	"github.com/redhajuanda/krangka/internal/core/port/inbound"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 // NoteHandler is a struct that encapsulates the configuration, logger, and service
@@ -31,7 +31,7 @@ func NewNoteHandler(cfg *configs.Config, log logger.Logger, svc inbound.Note) *N
 }
 
 // RegisterRoutes registers the HTTP routes for the NoteHandler.
-func (h *NoteHandler) RegisterRoutes(app *fiber.App) {
+func (h *NoteHandler) RegisterRoutes(app fiber.Router) {
 
 	app.Get("/notes/:id", h.GetNoteByID)
 	app.Post("/notes", h.CreateNote)
@@ -53,15 +53,15 @@ func (h *NoteHandler) RegisterRoutes(app *fiber.App) {
 // @Failure      404  {object}  response.ResponseFailed{}   "Not Found"
 // @Failure      500  {object}  response.ResponseFailed{}   "Internal Server Error"
 // @Router       /notes/{id} [get]
-func (h *NoteHandler) GetNoteByID(c *fiber.Ctx) error {
+func (h *NoteHandler) GetNoteByID(c fiber.Ctx) error {
 
 	var (
 		req dto.ReqGetNoteByID
 		res dto.ResGetNoteByID
-		ctx = c.UserContext()
+		ctx = c.Context()
 	)
 
-	if err := c.ParamsParser(&req); err != nil {
+	if err := c.Bind().URI(&req); err != nil {
 		return fail.Wrap(err).WithFailure(fail.ErrBadRequest)
 	}
 
@@ -91,15 +91,15 @@ func (h *NoteHandler) GetNoteByID(c *fiber.Ctx) error {
 // @Failure      400   {object}  response.ResponseFailed{}   "Bad Request"
 // @Failure      500   {object}  response.ResponseFailed{}   "Internal Server Error"
 // @Router       /notes [post]
-func (h *NoteHandler) CreateNote(c *fiber.Ctx) error {
+func (h *NoteHandler) CreateNote(c fiber.Ctx) error {
 
 	var (
 		req = dto.ReqCreateNote{}
 		res = dto.ResCreateNote{}
-		ctx = c.UserContext()
+		ctx = c.Context()
 	)
 
-	if err := c.BodyParser(&req); err != nil {
+	if err := c.Bind().Body(&req); err != nil {
 		return fail.Wrap(err).WithFailure(fail.ErrBadRequest)
 	}
 
@@ -133,18 +133,18 @@ func (h *NoteHandler) CreateNote(c *fiber.Ctx) error {
 // @Failure      404   {object}  response.ResponseFailed{}   "Not Found"
 // @Failure      500   {object}  response.ResponseFailed{}   "Internal Server Error"
 // @Router       /notes/{id} [put]
-func (h *NoteHandler) UpdateNote(c *fiber.Ctx) error {
+func (h *NoteHandler) UpdateNote(c fiber.Ctx) error {
 
 	var (
 		req dto.ReqUpdateNote
-		ctx = c.UserContext()
+		ctx = c.Context()
 	)
 
-	if err := c.ParamsParser(&req); err != nil {
+	if err := c.Bind().URI(&req); err != nil {
 		return fail.Wrap(err).WithFailure(fail.ErrBadRequest)
 	}
 
-	if err := c.BodyParser(&req); err != nil {
+	if err := c.Bind().Body(&req); err != nil {
 		return fail.Wrap(err).WithFailure(fail.ErrBadRequest)
 	}
 
@@ -174,14 +174,14 @@ func (h *NoteHandler) UpdateNote(c *fiber.Ctx) error {
 // @Failure      404  {object}  response.ResponseFailed{}   "Not Found"
 // @Failure      500  {object}  response.ResponseFailed{}   "Internal Server Error"
 // @Router       /notes/{id} [delete]
-func (h *NoteHandler) DeleteNote(c *fiber.Ctx) error {
+func (h *NoteHandler) DeleteNote(c fiber.Ctx) error {
 
 	var (
 		req dto.ReqDeleteNote
-		ctx = c.UserContext()
+		ctx = c.Context()
 	)
 
-	if err := c.ParamsParser(&req); err != nil {
+	if err := c.Bind().URI(&req); err != nil {
 		return fail.Wrap(err).WithFailure(fail.ErrBadRequest)
 	}
 
@@ -208,15 +208,15 @@ func (h *NoteHandler) DeleteNote(c *fiber.Ctx) error {
 // @Failure      400      {object}  response.ResponseFailed{}   "Bad Request"
 // @Failure      500      {object}  response.ResponseFailed{}   "Internal Server Error"
 // @Router       /notes [get]
-func (h *NoteHandler) ListNotes(c *fiber.Ctx) error {
+func (h *NoteHandler) ListNotes(c fiber.Ctx) error {
 
 	var (
 		req dto.ReqListNote
 		res dto.ResListNote
-		ctx = c.UserContext()
+		ctx = c.Context()
 	)
 
-	if err := c.QueryParser(&req); err != nil {
+	if err := c.Bind().Query(&req); err != nil {
 		return fail.Wrap(err).WithFailure(fail.ErrBadRequest)
 	}
 
