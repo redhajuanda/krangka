@@ -1,5 +1,7 @@
 package outbound
 
+//go:generate mockgen -source=publisher.go -destination=../../../mocks/outbound/mock_publisher.go -package=mocks
+
 import "github.com/ThreeDotsLabs/watermill/message"
 
 // Publisher is the emitting part of a Pub/Sub.

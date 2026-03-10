@@ -1,5 +1,7 @@
 package outbound
 
+//go:generate mockgen -source=dlock.go -destination=../../../mocks/outbound/mock_dlock.go -package=mocks
+
 import "context"
 
 // DLocker distributed locker interface

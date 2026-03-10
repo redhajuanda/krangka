@@ -77,7 +77,7 @@ or
 go run main.go http
 ```
 
-Swagger documentation is available at `http://localhost:8080/docs/index.html`
+Swagger documentation is available at `http://localhost:8000/docs/index.html`
 Run `make swag` to generate swagger documentation.
 
 Run Subscriber:

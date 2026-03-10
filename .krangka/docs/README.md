@@ -18,7 +18,7 @@ Welcome to the Krangka documentation. This documentation provides comprehensive 
 ## 🔗 External Resources
 
 - **Krangka CLI**: `go install github.com/redhajuanda/krangka/cli/krangka@latest`
-- **Qwery Package**: [Query Template Runner](https://github.com/redhajuanda/qwery)
+- **Qwery SDK**: [README — SQL template runner, pagination, transactions](https://github.com/redhajuanda/qwery)
 - **komon Package**: [Shared Utilities](https://github.com/redhajuanda/komon)
 
 ## 📝 Contributing to Documentation

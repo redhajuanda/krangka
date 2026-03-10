@@ -60,10 +60,9 @@ Manages application configuration across different environments.
 configs/
 ├── config.go                     # Configuration structs
 ├── env.go                        # Environment handling
-├── files/                        # Configuration files
-│   ├── default.yaml              # Default configuration
-│   └── example.yaml              # Example configuration template
-└── version.go                    # Version information
+└── files/                        # Configuration files
+    ├── default.yaml              # Default configuration
+    └── example.yaml              # Example configuration template
 ```
 
 ### Configuration Files
@@ -71,7 +70,6 @@ configs/
 - **`config.go`**: Defines configuration structs and validation
 - **`env.go`**: Handles environment variable loading
 - **`files/`**: YAML configuration files; `example.yaml` serves as the template for environment-specific configs
-- **`version.go`**: Application version information
 
 ## CLI Tooling (`cli/`)
 

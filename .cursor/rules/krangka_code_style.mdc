@@ -1,0 +1,151 @@
+---
+description: Go code style conventions for krangka projects
+globs: ["**/*.go"]
+alwaysApply: true
+---
+
+# krangka Code Style
+
+## Variable grouping with `var()`
+
+Group related variables at the start of a function using `var()` for better readability. Align the `=` for visual consistency.
+
+**Service methods — repos, config, derived values:**
+
+```go
+func (s *Service) UploadFile(ctx context.Context, req *inbound.UploadFileRequest) (*inbound.UploadFileResult, error) {
+	ctx, span := tracer.Trace(ctx)
+	defer span.End()
+
+	var (
+		fileRepo = s.repo.GetFileRepository()
+		bucket   = s.cfg.Storage.BucketPrivate
+	)
+
+	if req.IsPublic {
+		bucket = s.cfg.Storage.BucketPublic
+	}
+	// ...
+}
+```
+
+**Transaction callbacks — group repo getters:**
+
+```go
+out, err := s.repo.DoInTransaction(ctx, func(repo outbound.Repository) (any, error) {
+	var (
+		agentRepo = repo.GetAgentRepository()
+		roleRepo  = repo.GetRoleRepository()
+		userRepo  = repo.GetUserRepository()
+	)
+	// ...
+})
+```
+
+**HTTP handlers — req, res, ctx:**
+
+```go
+func (h *UserHandler) GetUserSummary(c *fiber.Ctx) error {
+	var (
+		res dto.ResUserSummary
+		ctx = c.UserContext()
+	)
+
+	agentID, ok := libctx.GetAgentID(ctx)
+	// ...
+}
+```
+
+**Workers — bootstrap vars:**
+
+```go
+var (
+	dep    = bootstrap.NewDependency(cfgFile)
+	cfg    = dep.GetConfig()
+	logger = dep.GetLogger()
+	runner = dep.GetWorkerOutboxRelay()
+	boot   = bootstrap.New(dep)
+)
+```
+
+### When to use
+
+- **2+ variables** at the start of a function → group in `var()`
+- **Single variable** used once → `var()` is optional; inline is fine
+- **Single variable** used multiple times → prefer `var()` for clarity
+
+### Alignment
+
+Align `=` for readability when variables have different lengths:
+
+```go
+var (
+	fileRepo   = s.repo.GetFileRepository()
+	bucket     = s.cfg.Storage.BucketPrivate
+	objectName = utils.GenerateStorageObjectName(req.Filename)
+)
+```
+
+---
+
+## Constants
+
+Store constants in `shared/constants`. Use `const ()` blocks with doc comments.
+
+```go
+// shared/constants/constants.go
+package constants
+
+const (
+	// RoleSuperAdmin is the name of the Super Admin role.
+	RoleSuperAdmin = "Super Admin"
+
+	// PermissionAksesPenuhID is the seeded ID for the "Akses Penuh" permission (full access).
+	PermissionAksesPenuhID = "01KJ5JZW1M0HHTJ2KNMM73RBT5"
+
+	// UserStatusActive is the status value for an active user.
+	UserStatusActive = "active"
+)
+```
+
+Import as `"github.com/capioteknologi/kitakaya-agent-be/shared/constants"` (adjust module path to match project).
+
+---
+
+## Service struct conventions
+
+- **Interface assertion** after constructor: `var _ inbound.File = (*Service)(nil)`
+- **Struct field alignment** in literals: align colons for readability
+- **Constructor comment**: `// NewService creates a new file service.`
+- **Implementation comment**: `// Service implements inbound.Color.`
+
+---
+
+## Error failures
+
+Create a **custom failure** in `shared/failure` when the error is domain-specific, user-actionable, or needs a distinct API response. Use standard failures (`fail.ErrBadRequest`, `fail.ErrNotFound`, etc.) for generic cases.
+
+**Create custom when:**
+- The error has a specific business meaning (e.g. max bank accounts exceeded, quota exceeded)
+- The client may need to handle it differently (e.g. show a specific message or retry)
+- You want a stable error code for API consumers
+
+**Use standard when:**
+- Generic validation failure → `fail.ErrBadRequest`
+- Resource not found → `fail.ErrNotFound`
+- One-off or rare cases that don't warrant a dedicated failure
+
+```go
+// shared/failure/failure.go
+var ErrMaxBankAccount = &fail.Failure{Code: "400001", Message: "Maximum bank accounts allowed per agent exceeded", HTTPStatus: 400}
+```
+
+Use the same HTTP status as the standard failure when appropriate (e.g. 400 for client errors).
+
+---
+
+## Function ordering
+
+1. Tracer (if used): `ctx, span := tracer.Trace(ctx)` then `defer span.End()`
+2. `var()` block with grouped variables
+3. Business logic

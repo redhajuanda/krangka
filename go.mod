@@ -16,8 +16,8 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/oklog/ulid/v2 v2.1.1
 	github.com/prometheus/client_golang v1.23.0
-	github.com/redhajuanda/komon v1.0.1
-	github.com/redhajuanda/qwery v1.0.0
+	github.com/redhajuanda/komon v1.0.2
+	github.com/redhajuanda/qwery v1.0.3
 	github.com/redis/go-redis/v9 v9.18.0
 	github.com/rubenv/sql-migrate v1.8.0
 	github.com/sirupsen/logrus v1.9.3
@@ -99,7 +99,7 @@ require (
 	github.com/prometheus/common v0.65.0 // indirect
 	github.com/prometheus/procfs v0.17.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
-	github.com/redhajuanda/kuysor v1.0.2 // indirect
+	github.com/redhajuanda/kuysor v1.0.4 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect

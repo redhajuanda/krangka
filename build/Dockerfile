@@ -27,7 +27,6 @@ WORKDIR /${appName}
 
 ## COPY scuttle binary
 ## Remove scuttle request from Infra SA
-## https://sicepat.slack.com/archives/C02463Y845R/p1716870045086029
 ## COPY --from=redboxoss/scuttle:1.3.5 /scuttle /bin/scuttle
 COPY --from=builder /${appName}/${appName} ./app
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt

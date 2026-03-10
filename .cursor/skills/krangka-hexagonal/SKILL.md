@@ -1,11 +1,11 @@
 ---
-name: hexagonal-expert
-description: Expert software architect for hexagonal and clean architecture design in Go. Use when designing system architecture, creating new modules/features, refactoring code layers, discussing dependency flow, ports and adapters, or when the user asks about architecture, separation of concerns, or hexagonal patterns. For foundational engineering philosophy and the hard refusal list, see krangka-engineering-principles.
+name: krangka-hexagonal
+description: Expert software architect for hexagonal and clean architecture design in Go. Authoritative source for krangka architecture rules (layer overview, import boundaries, test boundaries, dependency injection, port guidelines, naming conventions). Use when designing system architecture, creating new modules/features, refactoring code layers, discussing dependency flow, ports and adapters, or when the user asks about architecture, separation of concerns, or hexagonal patterns. For foundational engineering philosophy and the hard refusal list, see krangka-engineering-principles.
 ---
 
 # Hexagonal Architecture Expert
 
-You are a software architect expert specializing in Hexagonal Architecture (Ports and Adapters) and Clean Architecture patterns in Go, following the Sicepat Backend Architecture standards.
+You are a software architect expert specializing in Hexagonal Architecture (Ports and Adapters) and Clean Architecture patterns in Go, following the Krangka Backend Architecture standards.
 
 ## Core Principles
 
@@ -40,13 +40,90 @@ Domain and Service layers must be:
 - Database-agnostic
 - Transport-agnostic (HTTP, gRPC, CLI)
 
+## Layer Overview
+
+```
+internal/
+├── core/               # ← Pure business logic, NO framework imports
+│   ├── domain/         # Entities and value objects
+│   ├── port/
+│   │   ├── inbound/    # Use case interfaces (what the app exposes)
+│   │   └── outbound/   # Dependency interfaces (what the app needs)
+│   │       └── repositories/  # Repository sub-interfaces
+│   └── service/        # Use case implementations
+├── mocks/              # Generated mocks for testing
+│   ├── inbound/
+│   └── outbound/
+│       └── repositories/
+└── adapter/
+    ├── inbound/        # HTTP, CLI, events → drives the app
+    │   └── http/
+    └── outbound/       # DB, cache, events → driven by the app
+        ├── mariadb/
+        │   └── repositories/
+        └── redis/
+```
+
+Other adapters (kafka, redisstream, dlock, idempotency, subscriber, worker, migrate) follow the same pattern.
+
+## Import Boundary Rules (Strictly Enforced)
+
+| Layer | Can Import | Cannot Import |
+|---|---|---|
+| `domain` | stdlib only | anything else |
+| `port` | `domain`, stdlib, `qwery`, port sub-packages | `adapter`, `service` |
+| `service` | `domain`, `port`, `configs`, `silib` | `adapter`, DB drivers, HTTP |
+| `adapter/inbound` | `port/inbound`, `domain`, `silib` | `adapter/outbound` directly |
+| `adapter/outbound` | `port/outbound`, `domain`, DB drivers | `adapter/inbound`, `service` |
+
+**The core must never know about adapters.**
+
+Port may import external types (e.g. `golib/cache.DeleteOptions`) only when required for interface compatibility with adapters.
+
+## Test Boundary Rules
+
+- Tests in `core/service/` → only mock `port/outbound` interfaces, never import `adapter/outbound`
+- Tests in `adapter/inbound/http/` → only mock `port/inbound` interfaces
+- Tests in `adapter/outbound/mariadb/` → integration tests only, use real DB (testcontainers or docker)
+
+**Mocks**: Use generated mocks from `internal/mocks/outbound/` (and `internal/mocks/outbound/repositories/` for repository mocks) and `internal/mocks/inbound/`. Regenerate with `make mock`.
+
+## Dependency Injection
+
+Dependencies are wired in `cmd/bootstrap/dependency.go`. This is the only place where concrete adapters are instantiated and injected into services.
+
+Never instantiate adapters inside the `core` package.
+
+## Port Interface Guidelines
+
+- `outbound.Repository` is the aggregate repository — use it in services
+- Sub-repositories (`repositories.Note`) are accessed via `repo.GetNoteRepository()` etc.
+- `outbound.Cache` wraps the cache contract
+- `outbound.Publisher` / `outbound.Subscriber` for event streaming
+- `outbound.DLocker` for distributed locking
+- `outbound.Idempotency` for at-most-once processing
+
+**Mock generation**: Each port file must include a mockgen directive. Run `make mock` to generate mocks into `internal/mocks/inbound/` or `internal/mocks/outbound/` (and `internal/mocks/outbound/repositories/` for repository ports).
+
+```go
+//go:generate mockgen -source=cache.go -destination=../../../mocks/outbound/mock_cache.go -package=mocks
+```
+
+## Naming Conventions
+
+| Thing | Convention | Example |
+|---|---|---|
+| Service struct | `Service` | `type Service struct` |
+| Constructor | `NewService` | `func NewService(...) *Service` |
+| Port interface | noun | `type Note interface` |
+| Mock package | `mocks` | `package mocks` |
+| Test file | `*_test.go` same dir as source | `service_test.go` |
+
 ## Architecture Layers
 
 ### Layer 1: Domain (Core)
 
 **Purpose**: Pure business entities and value objects
-
-**Layout**: One file per entity in `internal/core/domain/` — flat, not nested. Do not create sub-packages per entity (e.g. avoid `domain/agent/agent.go`; use `domain/agent.go` instead).
 
 **Rules:**
 - NO external dependencies (no HTTP, DB, framework imports)
@@ -57,20 +134,18 @@ Domain and Service layers must be:
 
 **Example:**
 ```go
-// internal/core/domain/todo.go
-type Todo struct {
-    ID          string    `qwery:"id"`
-    Title       string    `qwery:"title"`
-    Description string    `qwery:"description"`
-    Done        bool      `qwery:"done"`
-    CreatedAt   time.Time `qwery:"created_at"`
-    UpdatedAt   time.Time `qwery:"updated_at"`
-    DeletedAt   int       `qwery:"deleted_at"`
+// internal/core/domain/note.go
+type Note struct {
+    ID        string    `qwery:"id"`
+    Title     string    `qwery:"title"`
+    Content   string    `qwery:"content"`
+    CreatedAt time.Time `qwery:"created_at"`
+    UpdatedAt time.Time `qwery:"updated_at"`
+    DeletedAt int       `qwery:"deleted_at"`
 }
 
-type TodoFilter struct {
+type NoteFilter struct {
     Search string `qwery:"search"`
-    IsDone *bool  `qwery:"is_done"` // pointer for optional filter
 }
 ```
 
@@ -80,12 +155,12 @@ type TodoFilter struct {
 
 **Inbound Ports** (`internal/core/port/inbound/`):
 ```go
-type Todo interface {
-    GetTodoByID(ctx context.Context, id string) (*domain.Todo, error)
-    CreateTodo(ctx context.Context, todo *domain.Todo) error
-    UpdateTodo(ctx context.Context, todo *domain.Todo) error
-    DeleteTodo(ctx context.Context, id string) error
-    ListTodo(ctx context.Context, filter *domain.TodoFilter, pagination *pagination.Pagination) (*[]domain.Todo, error)
+type Note interface {
+    GetNoteByID(ctx context.Context, id string) (*domain.Note, error)
+    CreateNote(ctx context.Context, note *domain.Note) error
+    UpdateNote(ctx context.Context, note *domain.Note) error
+    DeleteNote(ctx context.Context, id string) error
+    ListNote(ctx context.Context, filter *domain.NoteFilter, pagination *pagination.Pagination) (*[]domain.Note, error)
 }
 ```
 
@@ -95,7 +170,6 @@ type Repository interface {
     DoInTransaction(ctx context.Context, fn func(repo Repository) (any, error)) (any, error)
     PublishOutbox(ctx context.Context, target PublisherTarget, topic string, payload qwery.JSONMap) error
     RetryOutbox(ctx context.Context) error
-    GetTodoRepository() repositories.Todo
     GetNoteRepository() repositories.Note
 }
 ```
@@ -120,7 +194,7 @@ type Service struct {
     cache outbound.Cache
 }
 
-func (s *Service) GetTodoByID(ctx context.Context, id string) (*domain.Todo, error) {
+func (s *Service) GetNoteByID(ctx context.Context, id string) (*domain.Note, error) {
     ctx, span := tracer.Trace(ctx)
     defer span.End()
 
@@ -137,8 +211,9 @@ Always call `tracer.Trace(ctx)` and `defer span.End()` at the start of every ser
 
 **Inbound Adapters** (`internal/adapter/inbound/`):
 - HTTP handlers
-- Worker handlers
-- CLI commands
+- Subscriber handlers (event-driven: Kafka, Redis Streams)
+- Worker handlers (time-triggered or manual jobs)
+- Migration adapter
 
 **Outbound Adapters** (`internal/adapter/outbound/`):
 - Database repositories
@@ -147,14 +222,20 @@ Always call `tracer.Trace(ctx)` and `defer span.End()` at the start of every ser
 
 ## Design Decisions Guide
 
-### When Creating New Features
+### Adding a New Feature (Strict Order)
 
-1. **Start with Domain**: Define entities and filter structs first
-2. **Add Failure Definitions**: Add typed errors in `shared/failure/failure.go`
-3. **Define Ports**: Create service and repository interfaces
-4. **Implement Service**: Write business logic
-5. **Create Adapters**: Implement handlers and repositories
-6. **Wire Dependencies**: Register in bootstrap system (`cmd/bootstrap/dependency.go`)
+1. Define domain entity in `internal/core/domain/`
+2. Add failure definitions in `shared/failure/failure.go` when needed
+3. Define outbound port interfaces in `internal/core/port/outbound/repositories/`
+4. Define inbound port interface in `internal/core/port/inbound/`
+5. Run `make mock` to generate mocks
+6. **Write service tests first (TDD)** — write ALL scenarios in `internal/core/service/<feature>/service_test.go` using mocks. Do NOT implement the service yet.
+7. Implement service (`internal/core/service/<feature>/service.go`) to make tests pass
+8. Implement repository adapter (`internal/adapter/outbound/mariadb/repositories/`)
+9. Create DTOs (`internal/adapter/inbound/http/handler/dto/`)
+10. **Write handler tests first (TDD)** — write ALL scenarios in `internal/adapter/inbound/http/handler/<feature>_test.go`. Do NOT implement the handler yet.
+11. Implement HTTP handler (`internal/adapter/inbound/http/handler/`) to make tests pass
+12. Register route in router and wire dependencies in `cmd/bootstrap/dependency.go`
 
 ### Repository vs Service Responsibility
 
@@ -187,7 +268,7 @@ Always call `tracer.Trace(ctx)` and `defer span.End()` at the start of every ser
 
 ### Error Handling Strategy
 
-Uses `komon/fail` and `shared/failure`. See `krangka-fail` skill for details.
+Uses `silib/fail` and `shared/failure`. See `krangka-fail` skill for details.
 
 **Service Layer:**
 ```go
@@ -198,7 +279,7 @@ return nil, fail.Wrap(err)
 **Repository Layer:**
 ```go
 if errors.Is(err, sql.ErrNoRows) {
-    return nil, fail.Wrap(err).WithFailure(failure.ErrTodoNotFound)
+    return nil, fail.Wrap(err).WithFailure(failure.ErrNoteNotFound)
 }
 return nil, fail.Wrap(err) // always wrap to record stack trace
 ```
@@ -212,23 +293,14 @@ if err := req.Validate(); err != nil {
 
 **Typed Failures** (in `shared/failure/failure.go`):
 ```go
-var ErrTodoNotFound = &fail.Failure{Code: "404001", Message: "Todo not found", HTTPStatus: 404}
+var ErrNoteNotFound = &fail.Failure{Code: "404002", Message: "Note not found", HTTPStatus: 404}
 ```
 
 ## Common Patterns
 
 ### Pattern 1: CRUD Operations
 
-**Structure:**
-1. Domain entity and filter (`internal/core/domain/entity.go`)
-2. Failure definitions (`shared/failure/failure.go`)
-3. Repository interface (`internal/core/port/outbound/repositories/entity.go`)
-4. Service interface (`internal/core/port/inbound/entity.go`)
-5. Service implementation (`internal/core/service/entity/service.go`)
-6. Repository implementation (`internal/adapter/outbound/mariadb/repositories/entity.go`)
-7. HTTP handler (`internal/adapter/inbound/http/handler/entity.go`)
-8. DTOs (`internal/adapter/inbound/http/handler/dto/entity.go`)
-9. Bootstrap registration (`cmd/bootstrap/dependency.go`)
+Same as "Adding a New Feature" — domain → failures → ports → mocks → **service tests (TDD)** → service → repository → DTOs → **handler tests (TDD)** → handler → router → bootstrap.
 
 ### Pattern 2: Transaction Management
 
@@ -251,23 +323,26 @@ func (s *Service) CreateUserWithProfile(ctx context.Context, user *domain.User) 
 
 ### Pattern 3: Caching Strategy
 
+Use `GetObject` / `Set` for domain entities. `Set` expects `expiration` in seconds (int).
+
 ```go
-func (s *Service) GetTodoByID(ctx context.Context, id string) (*domain.Todo, error) {
+func (s *Service) GetNoteByID(ctx context.Context, id string) (*domain.Note, error) {
     ctx, span := tracer.Trace(ctx)
     defer span.End()
 
-    cacheKey := "todo:" + id
-    if cached, err := s.cache.Get(ctx, cacheKey); err == nil {
-        return cached.(*domain.Todo), nil
+    cacheKey := "note:" + id
+    var cached domain.Note
+    if err := s.cache.GetObject(ctx, cacheKey, &cached); err == nil {
+        return &cached, nil
     }
 
-    todo, err := s.repo.GetTodoRepository().GetTodoByID(ctx, id)
+    note, err := s.repo.GetNoteRepository().GetNoteByID(ctx, id)
     if err != nil {
         return nil, fail.Wrap(err)
     }
 
-    s.cache.Set(ctx, cacheKey, todo, time.Hour)
-    return todo, nil
+    _ = s.cache.Set(ctx, cacheKey, note, 3600) // 3600 seconds = 1 hour
+    return note, nil
 }
 ```
 
@@ -291,12 +366,18 @@ UPDATE table SET deleted_at = UNIX_TIMESTAMP() WHERE deleted_at = 0 AND id = ?
 
 ## Anti-Patterns to Avoid
 
+### ❌ Skipping TDD
+
+**Bad:** Implementing service or handler before writing tests. Jumping straight to implementation.
+
+**Good:** Write all test scenarios first (red), then implement to make them pass (green). Tests define expected behavior; implementation satisfies them. This applies to every new feature — see `krangka-engineering-principles` for the TDD principle.
+
 ### ❌ Business Logic in Handlers
 
 **Bad:**
 ```go
-func (h *TodoHandler) CreateTodo(c *fiber.Ctx) error {
-    if todo.Title == "" {
+func (h *NoteHandler) CreateNote(c fiber.Ctx) error {
+    if note.Title == "" {
         return errors.New("title required")
     }
     // ...
@@ -305,9 +386,9 @@ func (h *TodoHandler) CreateTodo(c *fiber.Ctx) error {
 
 **Good:**
 ```go
-func (h *TodoHandler) CreateTodo(c *fiber.Ctx) error {
-    todo := req.Transform()
-    return h.svc.CreateTodo(c.UserContext(), todo) // service validates
+func (h *NoteHandler) CreateNote(c fiber.Ctx) error {
+    note := req.Transform()
+    return h.svc.CreateNote(c.Context(), note) // service validates
 }
 ```
 
@@ -315,7 +396,7 @@ func (h *TodoHandler) CreateTodo(c *fiber.Ctx) error {
 
 **Bad:**
 ```go
-type Todo struct {
+type Note struct {
     ID    string `json:"id" db:"id" gorm:"primaryKey"`
     Title string `json:"title" db:"title"`
 }
@@ -323,7 +404,7 @@ type Todo struct {
 
 **Good:**
 ```go
-type Todo struct {
+type Note struct {
     ID    string `qwery:"id"`
     Title string `qwery:"title"`
 }
@@ -334,7 +415,7 @@ type Todo struct {
 **Bad:**
 ```go
 type Service struct {
-    repo *mariadb.TodoRepository // concrete type
+    repo *mariadb.NoteRepository // concrete type
 }
 ```
 
@@ -349,19 +430,19 @@ type Service struct {
 
 **Bad:**
 ```go
-func (r *todoRepository) CreateTodo(ctx context.Context, todo *domain.Todo) error {
-    if todo.Title == "" {
+func (r *noteRepository) CreateNote(ctx context.Context, note *domain.Note) error {
+    if note.Title == "" {
         return errors.New("title required") // business logic
     }
-    return r.db.Create(todo)
+    return r.db.Create(note)
 }
 ```
 
 **Good:**
 ```go
-func (r *todoRepository) CreateTodo(ctx context.Context, todo *domain.Todo) error {
-    query := `INSERT INTO todos (id, title, description, done) VALUES ({{ .id }}, {{ .title }}, {{ .description }}, {{ .done }})`
-    err := r.qwery.RunRaw(query).WithParams(todo).Query(ctx)
+func (r *noteRepository) CreateNote(ctx context.Context, note *domain.Note) error {
+    query := `INSERT INTO notes (id, title, content) VALUES ({{ .id }}, {{ .title }}, {{ .content }})`
+    err := r.qwery.RunRaw(query).WithParams(note).Query(ctx)
     return fail.Wrap(err)
 }
 ```
@@ -393,7 +474,7 @@ When reviewing code or designing features, verify:
 ### Adapter Layer
 - [ ] HTTP handlers use DTOs for request/response
 - [ ] Repositories implement outbound port interfaces
-- [ ] Error handling uses `fail` package (komon/fail, shared/failure)
+- [ ] Error handling uses `fail` package (silib/fail, shared/failure)
 - [ ] Proper transformation between DTOs and domain entities
 
 ### Dependency Flow
@@ -408,22 +489,26 @@ When reviewing code or designing features, verify:
 ```
 internal/
 ├── core/
-│   ├── domain/entity.go          # Pure business entities
+│   ├── domain/entity.go              # Pure business entities
 │   ├── port/
-│   │   ├── inbound/entity.go      # Service interfaces
+│   │   ├── inbound/entity.go         # Service interfaces
 │   │   └── outbound/
-│   │       └── repositories/entity.go  # Repository interfaces
-│   └── service/entity/service.go  # Business logic
+│   │       └── repositories/entity.go # Repository interfaces
+│   └── service/entity/service.go     # Business logic
+├── mocks/
+│   ├── inbound/                      # Generated mocks for inbound ports
+│   └── outbound/
+│       └── repositories/             # Generated mocks for repository ports
 └── adapter/
     ├── inbound/http/
     │   └── handler/
-    │       ├── dto/entity.go     # Request/Response DTOs
-    │       └── entity.go         # HTTP handlers
+    │       ├── dto/entity.go         # Request/Response DTOs
+    │       └── entity.go             # HTTP handlers
     └── outbound/mariadb/
-        └── repositories/entity.go # Repository implementation
+        └── repositories/entity.go   # Repository implementation
 
 shared/
-└── failure/failure.go             # Typed error definitions
+└── failure/failure.go               # Typed error definitions
 ```
 
 ### Key Imports by Layer
@@ -442,7 +527,7 @@ For detailed information, read:
 - `.krangka/docs/03_core-components.md` - Layer responsibilities and examples
 - `.krangka/docs/04_adding-new-features.md` - Step-by-step feature guide
 
-Related skills: `krangka-engineering-principles` (foundational philosophy & hard refusal list), `krangka-bootstrap`, `krangka-dependency-wiring`, `krangka-fail`, `krangka-pagination`, `krangka-repository`
+Related skills: `krangka-engineering-principles` (foundational philosophy & hard refusal list), `krangka-bootstrap`, `krangka-dependency-wiring`, `krangka-fail`, `krangka-pagination`, `krangka-repository`, `krangka-subscriber`, `krangka-worker`
 
 ## Summary
 

@@ -1,5 +1,7 @@
 package outbound
 
+//go:generate mockgen -source=cache.go -destination=../../../mocks/outbound/mock_cache.go -package=mocks
+
 import (
 	"context"
 	"time"

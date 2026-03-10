@@ -65,7 +65,7 @@ context: |
   - Consider implementing middleware for cross-cutting concerns (e.g., logging, authentication)
   - Write correct, up-to-date, bug-free, fully functional, secure, and efficient Go code
   
-  # Worker Conventions (Sicepat Standard)
+  # Worker Conventions (Krangka Standard)
   - **Scheduled Tasks**: Use Kubernetes CronJob with OneTime workers (preferred)
   - **Continuous Tasks**: Use Kubernetes Deployment with LongRunning workers
   - **Periodic Workers**: Only use when explicitly requested or scheduling must be application-managed
@@ -122,7 +122,7 @@ context: |
   - Always include logging for important operations
   
   # Domain
-  - This is Krangka: A Go boilerplate for Sicepat internal teams
+  - This is Krangka: A Go boilerplate for Krangka 
   - Provides quick start for building backend services
   - **Core Philosophy**: Test-Driven Development (TDD) + Domain-Driven Design (DDD)
   - Focus on testability, maintainability, and extensibility

@@ -99,9 +99,10 @@ The relay worker periodically queries pending outbox entries and publishes them 
 
 ```bash
 go run main.go worker outbox-relay
+# Or: make worker name=outbox-relay
 ```
 
-Or with config:
+With custom config:
 
 ```bash
 go run main.go --config configs/files/example.yaml worker outbox-relay
@@ -129,7 +130,7 @@ event:
 
 1. `WorkerOutboxRelay.Execute(ctx)` is called by the scheduler on the cron pattern.
 2. It calls `repo.RetryOutbox(ctx)`, which:
-   - Queries `outboxes` WHERE `status = 'pending'` AND `retry_attempt < max_retry_attempts`
+   - Queries `outboxes` WHERE `status = 'pending'` AND `deleted_at = 0` AND `retry_attempt < max_retry_attempts`
    - For each entry: publish to the target broker → update `status` and `retry_attempt`
 
 ---
@@ -189,13 +190,13 @@ In `cmd/bootstrap/dependency.go`:
 ```go
 func (d *Dependency) GetWorkerOutboxRelay() *worker.WorkerOutboxRelay {
 	return d.workerOutboxRelay.Resolve(func() *worker.WorkerOutboxRelay {
-		repo := d.GetRepository(d.GetQweryWorker())
+		repo := d.GetRepository(d.GetqweryWorker())
 		return worker.NewWorkerOutboxRelay(d.GetConfig(), d.GetLogger(), repo)
 	})
 }
 ```
 
-**Note:** Use `GetQweryWorker()` so the relay uses the worker DB pool, not the main HTTP pool.
+**Note:** Use `GetqweryWorker()` so the relay uses the worker DB pool, not the main HTTP pool.
 
 ### 3. Cobra command
 

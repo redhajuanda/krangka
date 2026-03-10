@@ -127,7 +127,6 @@ type Repository interface {
     PublishOutbox(ctx context.Context, target PublisherTarget, topic string, payload qwery.JSONMap) error
     RetryOutbox(ctx context.Context) error
     GetNoteRepository() repositories.Note
-    GetTodoRepository() repositories.Todo
     GetWidgetRepository() repositories.Widget  // ← add this
 }
 ```
@@ -150,7 +149,7 @@ type Widget struct {
 }
 
 type WidgetFilter struct {
-    Search string
+    Search string `qwery:"search"`
 }
 ```
 
@@ -173,6 +172,7 @@ import (
     "errors"
 
     "github.com/redhajuanda/krangka/internal/core/domain"
+    "github.com/redhajuanda/krangka/shared/failure"
     "github.com/redhajuanda/qwery"
     "github.com/redhajuanda/komon/fail"
     "github.com/redhajuanda/komon/pagination"
@@ -191,7 +191,7 @@ func NewWidgetRepository(qwery qwery.Runable) *widgetRepository {
 **Mandatory rules for every method:**
 - Call `tracer.Trace(ctx)` + `defer span.End()` at the top
 - Always `fail.Wrap(err)` on every error return
-- For `sql.ErrNoRows`, additionally chain `.WithFailure(fail.ErrNotFound)`
+- For `sql.ErrNoRows`, map to a typed failure: use `failure.ErrXxx` from `shared/failure` (e.g. `failure.ErrWidgetNotFound`) for domain-specific errors, or `fail.ErrNotFound` for generic 404
 
 ```go
 func (r *widgetRepository) GetWidgetByID(ctx context.Context, id string) (*domain.Widget, error) {
@@ -206,7 +206,7 @@ func (r *widgetRepository) GetWidgetByID(ctx context.Context, id string) (*domai
         Query(ctx)
     if err != nil {
         if errors.Is(err, sql.ErrNoRows) {
-            return nil, fail.Wrap(err).WithFailure(fail.ErrNotFound)
+            return nil, fail.Wrap(err).WithFailure(failure.ErrWidgetNotFound)
         }
         return nil, fail.Wrap(err)
     }
@@ -259,11 +259,9 @@ qwery is the SQL SDK. It provides a fluent builder chain over raw SQL with templ
 | `.WithOrderBy(cols...)` | Prefix `+` for ASC, `-` for DESC. E.g. `"-created_at", "+id"` — **see krangka-pagination for cursor pagination OrderBy rules** |
 | `.ScanStruct(&dest)` | Scan one row into a struct |
 | `.ScanStructs(&dest)` | Scan many rows into a slice |
-| `.Query(ctx)` | Execute — use **only** for **SELECT** (returns `error`) |
-| `.Exec(ctx)` | Execute — use **only** for **INSERT / UPDATE / DELETE** (returns `sql.Result, error`) |
+| `.Query(ctx)` | Execute — use for **SELECT** (returns `error`) |
+| `.Exec(ctx)` | Execute — use for **INSERT / UPDATE / DELETE** (returns `sql.Result, error`) |
 
-> **CRITICAL — Query vs Exec**: Use `.Query(ctx)` for SELECT (reads). Use `.Exec(ctx)` for INSERT, UPDATE, DELETE (writes). Never use `Query` for writes — it is semantically wrong and can cause subtle issues.
->
 > **OrderBy + cursor pagination**: When using `WithPagination()` + `WithOrderBy()`, the sort order must be deterministic. See **krangka-pagination** for full rules and examples.
 
 ### Template parameters
@@ -281,6 +279,16 @@ WHERE id = {{ .id }}
 WHERE deleted_at = 0
 {{ if .is_active }} AND active = {{ .is_active }} {{ end }}
 ```
+
+> **CRITICAL — Never concatenate query strings**  
+> `RunRaw` takes a query string. **Never** embed values via `fmt.Sprintf`, string concatenation, or any form of interpolation. Example of what is **wrong**:
+>
+> ```go
+> // WRONG — do not do this
+> RunRaw(fmt.Sprintf("SELECT id, name FROM widgets WHERE id = {{ .id }} AND deleted_at = 0", id))
+> ```
+>
+> Parameters must **always** be passed using `WithParam` or `WithParams`. qwery uses bind variables for SQL injection prevention — values are never interpolated into the SQL string.
 
 ### SELECT — single row
 
@@ -454,8 +462,7 @@ If `DoInTransaction` is called while already inside a transaction, the inner cal
 - [ ] **Implementation**: create `internal/adapter/outbound/mariadb/repositories/<entity>.go`
   - [ ] Field `qwery qwery.Runable` (not `*qwery.Client`)
   - [ ] `tracer.Trace(ctx)` + `defer span.End()` in every method
-  - [ ] `fail.Wrap` on every error; `.WithFailure(fail.ErrNotFound)` for `sql.ErrNoRows`
-  - [ ] Use `.Query(ctx)` for SELECT only; use `.Exec(ctx)` for INSERT, UPDATE, DELETE
+  - [ ] `fail.Wrap` on every error; `.WithFailure(failure.ErrXxx)` for `sql.ErrNoRows` (use typed failures from `shared/failure`)
 - [ ] **Wire**: add field, constructor init, and getter to `internal/adapter/outbound/mariadb/repository.go`
   - [ ] Getter checks `r.qweryTx != nil` and returns tx-scoped instance
 - [ ] **Service**: use [DoInTransaction](#5-transactions) for mutating operations; always use `repo` (lambda arg) inside the lambda, never `s.repo`. For outbox events, see **krangka-outbox**
