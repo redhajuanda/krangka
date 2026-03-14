@@ -392,6 +392,7 @@ func initNew(cmd *cobra.Command, args []string) error {
 
 	var stdout, stderr bytes.Buffer
 	gocmd := exec.Command("go", "mod", "download", "-json", srcModVers)
+	gocmd.Env = append(os.Environ(), "GOPROXY=direct")
 	gocmd.Stdout = &stdout
 	gocmd.Stderr = &stderr
 	if err := gocmd.Run(); err != nil {
