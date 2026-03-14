@@ -1,0 +1,20 @@
+# Ignore everything in configs/files folder
+configs/files/**
+# But do not ignore this specific file
+!configs/files/example.yaml
+
+# visual studio code settings
+.idea/
+.vscode/
+
+cli/krangka/krangka
+
+prompt
+testing/
+
+.DS_Store
+
+coverage.out
+
+# Ignore all files in the "vendor" directory
+vendor/**

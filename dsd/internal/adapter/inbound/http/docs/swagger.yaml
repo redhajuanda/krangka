@@ -1,0 +1,325 @@
+basePath: /platform/krangka
+definitions:
+  dto.ListNote:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.ReqCreateNote:
+    properties:
+      content:
+        type: string
+      title:
+        type: string
+    required:
+    - content
+    - title
+    type: object
+  dto.ReqUpdateNote:
+    properties:
+      content:
+        type: string
+      title:
+        type: string
+    required:
+    - content
+    - title
+    type: object
+  dto.ResCreateNote:
+    properties:
+      id:
+        type: string
+    type: object
+  dto.ResGetNoteByID:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  pagination.Result:
+    properties:
+      cursor:
+        $ref: '#/definitions/pagination.ResultPaginationCursor'
+      offset:
+        $ref: '#/definitions/pagination.ResultPaginationOffset'
+      type:
+        type: string
+    type: object
+  pagination.ResultPaginationCursor:
+    properties:
+      next:
+        type: string
+      prev:
+        type: string
+      total_data:
+        type: integer
+    type: object
+  pagination.ResultPaginationOffset:
+    properties:
+      current_page:
+        type: integer
+      per_page:
+        type: integer
+      total_data:
+        type: integer
+      total_page:
+        type: integer
+    type: object
+  response.Metadata:
+    properties:
+      correlation_id:
+        type: string
+      pagination:
+        $ref: '#/definitions/pagination.Result'
+      request_id:
+        type: string
+    type: object
+  response.ResponseFailed:
+    properties:
+      data: {}
+      error_code:
+        type: string
+      message:
+        type: string
+      metadata:
+        $ref: '#/definitions/response.Metadata'
+      success:
+        example: false
+        type: boolean
+    type: object
+  response.ResponseSuccess:
+    properties:
+      data: {}
+      message:
+        example: success
+        type: string
+      metadata:
+        $ref: '#/definitions/response.Metadata'
+      success:
+        example: true
+        type: boolean
+    type: object
+info:
+  contact: {}
+  description: This is a documentation for Krangka Service RESTful APIs. <br>
+  title: Krangka Service API
+paths:
+  /notes:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of notes with optional filtering and pagination
+      parameters:
+      - in: query
+        name: count_total_data
+        type: boolean
+      - in: query
+        name: cursor
+        type: string
+      - in: query
+        name: page
+        type: integer
+      - enum:
+        - offset
+        - cursor
+        in: query
+        name: pagination_type
+        required: true
+        type: string
+      - in: query
+        name: per_page
+        type: integer
+      - in: query
+        maxLength: 100
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Notes retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ResponseSuccess'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.ListNote'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ResponseFailed'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ResponseFailed'
+      summary: List Notes
+      tags:
+      - Notes
+    post:
+      consumes:
+      - application/json
+      description: Creates a new note
+      parameters:
+      - description: Note data
+        in: body
+        name: note
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ReqCreateNote'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Note created successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ResponseSuccess'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ResCreateNote'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ResponseFailed'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ResponseFailed'
+      summary: Create Note
+      tags:
+      - Notes
+  /notes/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a note by ID
+      parameters:
+      - description: Note ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Note deleted successfully
+          schema:
+            $ref: '#/definitions/response.ResponseSuccess'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ResponseFailed'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ResponseFailed'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ResponseFailed'
+      summary: Delete Note
+      tags:
+      - Notes
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a note by its id
+      parameters:
+      - description: Note ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Note retrieved successfully
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.ResponseSuccess'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ResGetNoteByID'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ResponseFailed'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ResponseFailed'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ResponseFailed'
+      summary: Get Note by ID
+      tags:
+      - Notes
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing note by ID
+      parameters:
+      - description: Note ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Note data
+        in: body
+        name: note
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ReqUpdateNote'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Note updated successfully
+          schema:
+            $ref: '#/definitions/response.ResponseSuccess'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ResponseFailed'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.ResponseFailed'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ResponseFailed'
+      summary: Update Note
+      tags:
+      - Notes
+securityDefinitions:
+  BasicAuth:
+    type: basic
+  BearerToken:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -1,0 +1,157 @@
+# Application configuration
+app:
+  # Service name
+  name: dsd
+# Log configuration
+log:
+  # Log level (0: Panic, 1: Fatal, 2: Error, 3: Warn, 4: Info, 5: Debug, 6: Trace), default is 6
+  level: 6
+  # Log format (text: text format, json: json format), default is text
+  format: text
+  # Redacted fields are fields that will be redacted in the log
+  redacted_fields: ["auth", "password", "auth_token", "access_token", "refresh_token", "api_key", "phone_number", "phone", "telephone", "api_secret", "api_token", "api_key_id", "api_key_secret", "api_key_id_secret"]
+# HTTP configuration
+http:
+  # HTTP server port
+  port: 8000
+  # Maximum duration for reading the entire request, including the body
+  read_timeout: 60s
+  # Maximum duration for writing the response body
+  write_timeout: 60s
+  # Maximum amount of time to wait for the next request when keep-alives are enabled
+  idle_timeout: 120s
+  # Maximum time to wait for HTTP server to start
+  start_timeout: 30s
+  # Maximum time to wait for in-flight requests to complete during graceful shutdown
+  stop_timeout: 5s            
+  # Enable print routes
+  enable_print_routes: true
+  # Disable startup message
+  disable_startup_message: false
+# Database configuration
+database:
+  # MariaDB main configuration
+  mariadb_main:
+    # MariaDB host
+    host: localhost
+    # MariaDB port
+    port: 3300
+    # MariaDB username
+    username: mariadb
+    # MariaDB password
+    password: mariadb
+    # MariaDB database name
+    name: db_app
+    # Maximum number of open connections to the database
+    max_open_conns: 30
+    # Maximum number of idle connections in the pool
+    max_idle_conns: 10
+    # Maximum amount of time a connection may be reused
+    conn_max_lifetime: 5m
+    # Maximum amount of time a connection may be idle
+    conn_max_idle_time: 5m
+  # MariaDB worker configuration
+  mariadb_worker:
+    # MariaDB host
+    host: localhost
+    # MariaDB port
+    port: 3300
+    # MariaDB username
+    username: mariadb
+    # MariaDB password
+    password: mariadb
+    # MariaDB database name
+    name: db_app
+    # Maximum number of open connections to the database
+    max_open_conns: 5
+    # Maximum number of idle connections in the pool
+    max_idle_conns: 2
+    # Maximum amount of time a connection may be reused
+    conn_max_lifetime: 5m
+    # Maximum amount of time a connection may be idle
+    conn_max_idle_time: 5m
+# Cache configuration
+cache:
+  # Redis configuration
+  redis:
+    # Use sentinel mode
+    sentinel: true
+    # Redis master name
+    master_name: mymaster
+    # Redis hosts
+    hosts: ["localhost:26381"]
+    # Redis username
+    username: 
+    # Redis password
+    password: 
+    # Redis database
+    db: 0
+    # Redis pool size
+    pool_size: 100
+    # Redis minimum idle connections
+    min_idle_conns: 50
+# OpenTelemetry configuration
+otel:
+  # OpenTelemetry URL
+  url: http://localhost:14268/api/traces
+  # OpenTelemetry exporter
+  exporter: jaeger
+  # OpenTelemetry sample rate
+  sample_rate: 1
+# Roles configuration
+roles:
+  # Superadmin role
+  superadmin: 1
+# Event configuration
+event:
+  # Outbox configuration
+  outbox:
+    # Schedule cron pattern to check for outbox items to be processed, example: */10 * * * * * (every 10 seconds)"
+    relay_pattern: "*/10 * * * * *"
+    # Maximum number of retry attempts (not including the initial attempt), default is 3
+    max_retry_attempts: 3
+    # Maximum number of outbox items to fetch in a batch (per page), default is 100
+    fetch_per_page: 100
+  # Idempotency configuration
+  idempotency:
+    # TTL of the idempotency key, default is 24 hour
+    ttl: 24h
+  # Kafka configuration
+  kafka:
+    # Kafka publisher configuration
+    publisher:
+      # Enable Kafka publisher (required if using outbox with Kafka)
+      enabled: true
+      # Kafka brokers
+      brokers: ["localhost:9092"]
+      # Debug enabled
+      debug_enabled: true
+      # Trace enabled
+      trace_enabled: true
+    # Kafka subscribers configuration
+    subscribers:
+      # Kafka subscriber configuration
+      - id: general
+        # Kafka brokers
+        brokers: ["localhost:9092"]
+        # Kafka consumer group
+        consumer_group: general
+        # Debug enabled
+        debug_enabled: true
+        # Trace enabled
+        trace_enabled: true
+  # Redis stream configuration
+  redisstream:
+    # Redis stream publisher configuration
+    publisher:
+      # Enable Redis stream publisher (default is true)
+      enabled: true
+      # Default maximum length of the redis stream
+      default_maxlen: 10000
+    # Redis stream subscribers configuration
+    subscribers:
+      # Redis stream subscriber configuration
+      - id: general
+        # When empty, fan-out mode will be used.
+        consumer_group: general
+      
