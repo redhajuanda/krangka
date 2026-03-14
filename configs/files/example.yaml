@@ -121,7 +121,7 @@ event:
     # Kafka publisher configuration
     publisher:
       # Enable Kafka publisher (required if using outbox with Kafka)
-      enabled: true
+      enabled: false
       # Kafka brokers
       brokers: ["localhost:9092"]
       # Debug enabled

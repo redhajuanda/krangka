@@ -155,9 +155,9 @@ func (k KafkaSubscribers) GetByID(id string) *KafkaSubscriber {
 	return nil
 }
 
-// GetEnv returns the environment variable SCENV
+// GetEnv returns the environment variable ENV
 func (c *Config) GetEnv() Env {
-	return Env(os.Getenv("SCENV"))
+	return Env(os.Getenv("ENV"))
 }
 
 // LoadConfig loads the configuration from the given file path

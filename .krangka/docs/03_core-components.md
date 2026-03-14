@@ -19,31 +19,6 @@ The domain layer contains the heart of your business logic - the entities, value
 
 Domain entities represent the core business objects in your application. They are pure Go structs with no external dependencies.
 
-#### Example: Todo Entity
-
-```go
-// internal/core/domain/todo.go
-package domain
-
-import "time"
-
-type Todo struct {
-    ID          string    `qwery:"id"`
-    Title       string    `qwery:"title"`
-    Description string    `qwery:"description"`
-    Done        bool      `qwery:"done"`
-    CreatedAt   time.Time `qwery:"created_at"`
-    UpdatedAt   time.Time `qwery:"updated_at"`
-    DeletedAt   int       `qwery:"deleted_at"`
-}
-
-// Filter struct for list operations
-type TodoFilter struct {
-    Search string `qwery:"search"`
-    IsDone *bool  `qwery:"is_done"` // pointer to make boolean optional
-}
-```
-
 #### Example: Note Entity
 
 ```go
@@ -53,17 +28,17 @@ package domain
 import "time"
 
 type Note struct {
-    ID        string    `qwery:"id"`
-    Title     string    `qwery:"title"`
-    Content   string    `qwery:"content"`
-    CreatedAt time.Time `qwery:"created_at"`
-    UpdatedAt time.Time `qwery:"updated_at"`
-    DeletedAt int       `qwery:"deleted_at"`
+    ID        string    `sikat:"id"`
+    Title     string    `sikat:"title"`
+    Content   string    `sikat:"content"`
+    CreatedAt time.Time `sikat:"created_at"`
+    UpdatedAt time.Time `sikat:"updated_at"`
+    DeletedAt int       `sikat:"deleted_at"`
 }
 
 // Filter struct for list operations
 type NoteFilter struct {
-    Search string `qwery:"search"`
+    Search string `sikat:"search"`
 }
 ```
 
@@ -72,7 +47,7 @@ type NoteFilter struct {
 #### 1. Pure Business Logic
 - No external dependencies (no HTTP, database, or framework imports)
 - No JSON tags (use DTOs for serialization)
-- Only use `qwery` tags for database mapping
+- Only use `sikat` tags for database mapping
 
 #### 2. Keep It Simple
 - Domain entities are plain data structs
@@ -109,14 +84,13 @@ The application implements soft delete functionality to preserve data integrity 
 All domain entities include a `DeletedAt` field that stores Unix timestamps:
 
 ```go
-type Todo struct {
-    ID          string    `qwery:"id"`
-    Title       string    `qwery:"title"`
-    Description string    `qwery:"description"`
-    Done        bool      `qwery:"done"`
-    CreatedAt   time.Time `qwery:"created_at"`
-    UpdatedAt   time.Time `qwery:"updated_at"`
-    DeletedAt   int       `qwery:"deleted_at"`  // Soft delete field (Unix timestamp)
+type Note struct {
+    ID        string    `sikat:"id"`
+    Title     string    `sikat:"title"`
+    Content   string    `sikat:"content"`
+    CreatedAt time.Time `sikat:"created_at"`
+    UpdatedAt time.Time `sikat:"updated_at"`
+    DeletedAt int       `sikat:"deleted_at"`  // Soft delete field (Unix timestamp)
 }
 ```
 
@@ -136,24 +110,23 @@ All queries automatically filter out soft-deleted records:
 **Select Queries:**
 ```sql
 -- Get by ID
-SELECT id, title, description, done, created_at, updated_at
-FROM todos
+SELECT id, title, content, created_at, updated_at
+FROM notes
 WHERE deleted_at = 0
 AND id = {{ .id }}
 
 -- List with filters
-SELECT id, title, description, done, created_at, updated_at
-FROM todos
+SELECT id, title, content, created_at, updated_at
+FROM notes
 WHERE deleted_at = 0
-{{ if .search }} AND (title LIKE CONCAT('%', {{ .search }}, '%') OR description LIKE CONCAT('%', {{ .search }}, '%')) {{ end }}
-{{ if .is_done }} AND done = {{ .is_done }} {{ end }}
+{{ if .search }} AND (title LIKE CONCAT('%', {{ .search }}, '%') OR content LIKE CONCAT('%', {{ .search }}, '%')) {{ end }}
 ```
 
 **Update Queries:**
 ```sql
 -- Update existing record
-UPDATE todos 
-SET title = {{ .title }}, description = {{ .description }}, done = {{ .done }}
+UPDATE notes 
+SET title = {{ .title }}, content = {{ .content }}
 WHERE deleted_at = 0
 AND id = {{ .id }}
 ```
@@ -161,7 +134,7 @@ AND id = {{ .id }}
 **Delete Queries:**
 ```sql
 -- Soft delete (mark as deleted with timestamp)
-UPDATE todos SET deleted_at = UNIX_TIMESTAMP() WHERE deleted_at = 0 AND id = {{ .id }}
+UPDATE notes SET deleted_at = UNIX_TIMESTAMP() WHERE deleted_at = 0 AND id = {{ .id }}
 ```
 
 #### Benefits of Soft Delete
@@ -188,10 +161,10 @@ Port interfaces define the contracts between the core application and external s
 
 Inbound ports define what external systems can do to drive your application.
 
-#### Example: Todo Service Interface
+#### Example: Note Service Interface
 
 ```go
-// internal/core/port/inbound/todo.go
+// internal/core/port/inbound/note.go
 package inbound
 
 import (
@@ -200,17 +173,17 @@ import (
     "github.com/redhajuanda/komon/pagination"
 )
 
-type Todo interface {
-    // GetTodoByID retrieves a todo item by its ID
-    GetTodoByID(ctx context.Context, id string) (*domain.Todo, error)
-    // CreateTodo creates a new todo item
-    CreateTodo(ctx context.Context, todo *domain.Todo) error
-    // UpdateTodo updates an existing todo item
-    UpdateTodo(ctx context.Context, todo *domain.Todo) error
-    // DeleteTodo deletes a todo item by its ID
-    DeleteTodo(ctx context.Context, id string) error
-    // ListTodo retrieves a list of todo items with pagination
-    ListTodo(ctx context.Context, req *domain.TodoFilter, pagination *pagination.Pagination) (*[]domain.Todo, error)
+type Note interface {
+    // GetNoteByID retrieves a note item by its ID
+    GetNoteByID(ctx context.Context, id string) (*domain.Note, error)
+    // CreateNote creates a new note item
+    CreateNote(ctx context.Context, note *domain.Note) error
+    // UpdateNote updates an existing note item
+    UpdateNote(ctx context.Context, note *domain.Note) error
+    // DeleteNote deletes a note item by its ID
+    DeleteNote(ctx context.Context, id string) error
+    // ListNote retrieves a list of note items with pagination
+    ListNote(ctx context.Context, req *domain.NoteFilter, pagination *pagination.Pagination) (*[]domain.Note, error)
 }
 ```
 
@@ -221,7 +194,7 @@ Outbound ports define what your application needs from external systems.
 #### Repository Interfaces
 
 ```go
-// internal/core/port/outbound/repositories/todo.go
+// internal/core/port/outbound/repositories/note.go
 package repositories
 
 import (
@@ -230,17 +203,17 @@ import (
     "github.com/redhajuanda/komon/pagination"
 )
 
-type Todo interface {
-    // GetTodoByID retrieves a todo item by its ID
-    GetTodoByID(ctx context.Context, id string) (*domain.Todo, error)
-    // CreateTodo creates a new todo item
-    CreateTodo(ctx context.Context, todo *domain.Todo) error
-    // UpdateTodo updates an existing todo item
-    UpdateTodo(ctx context.Context, todo *domain.Todo) error
-    // DeleteTodo deletes a todo item by its ID
-    DeleteTodo(ctx context.Context, id string) error
-    // ListTodos retrieves a list of todo items with pagination
-    ListTodos(ctx context.Context, req *domain.TodoFilter, pagination *pagination.Pagination) (*[]domain.Todo, error)
+type Note interface {
+    // GetNoteByID retrieves a note item by its ID
+    GetNoteByID(ctx context.Context, id string) (*domain.Note, error)
+    // CreateNote creates a new note item
+    CreateNote(ctx context.Context, note *domain.Note) error
+    // UpdateNote updates an existing note item
+    UpdateNote(ctx context.Context, note *domain.Note) error
+    // DeleteNote deletes a note item by its ID
+    DeleteNote(ctx context.Context, id string) error
+    // ListNote retrieves a list of note items with pagination
+    ListNote(ctx context.Context, req *domain.NoteFilter, pagination *pagination.Pagination) (*[]domain.Note, error)
 }
 ```
 
@@ -257,14 +230,12 @@ import (
 )
 
 type Repository interface {
-    // DoInTransaction executes a function within a database transaction
+    // DoInTransaction executes a function in a transaction
     DoInTransaction(ctx context.Context, fn func(repo Repository) (any, error)) (any, error)
-    // PublishOutbox publishes an outbox event to the given target topic
-    PublishOutbox(ctx context.Context, target PublisherTarget, topic string, payload qwery.JSONMap) error
-    // RetryOutbox retries failed outbox events
+    // PublishOutbox publishes an outbox event
+    PublishOutbox(ctx context.Context, target PublisherTarget, topic string, payload sikat.JSONMap) error
+    // RetryOutbox retries an outbox event
     RetryOutbox(ctx context.Context) error
-    // GetTodoRepository returns the TodoRepository instance
-    GetTodoRepository() repositories.Todo
     // GetNoteRepository returns the NoteRepository instance
     GetNoteRepository() repositories.Note
 }
@@ -287,13 +258,19 @@ type Cache cache.Cache
 // internal/core/port/outbound/publisher.go
 package outbound
 
-import "github.com/ThreeDotsLabs/watermill/message"
+import (
+    "context"
+    "github.com/ThreeDotsLabs/watermill/message"
+)
 
-// Publisher is a contract for the message publisher (Watermill)
-type Publisher message.Publisher
+// Publisher is the emitting part of a Pub/Sub (Watermill contract)
+type Publisher interface {
+    Publish(topic string, messages ...*message.Message) error
+    Close() error
+}
 
-// Publishers is a map of publishers keyed by target
-type Publishers map[PublisherTarget]message.Publisher
+// Publishers is a map of publishers by target
+type Publishers map[PublisherTarget]Publisher
 
 type PublisherTarget string
 
@@ -303,8 +280,31 @@ const (
 )
 
 // internal/core/port/outbound/subscriber.go
-// Subscriber is a contract for the message subscriber (Watermill)
-type Subscriber message.Subscriber
+// Subscriber is the consuming part of the Pub/Sub (Watermill contract)
+type Subscriber interface {
+    Subscribe(ctx context.Context, topic string) (<-chan *message.Message, error)
+    Close() error
+}
+```
+
+#### Idempotency Interface
+
+Used by the subscriber middleware to ensure at-most-once processing of events.
+
+```go
+// internal/core/port/outbound/idempotency.go
+package outbound
+
+import (
+    "context"
+    "time"
+)
+
+type Idempotency interface {
+    // TryClaim atomically claims the idempotency key for the given topic and message ID.
+    // Returns true if claimed (caller should process), false if already processed (caller should skip/ACK).
+    TryClaim(ctx context.Context, topic, messageID string, ttl time.Duration) (claimed bool, err error)
+}
 ```
 
 #### Distributed Lock Interface
@@ -344,11 +344,11 @@ The service layer implements the business logic and orchestrates domain operatio
 
 ### Service Implementation
 
-#### Example: Todo Service
+#### Example: Note Service
 
 ```go
-// internal/core/service/todo/service.go
-package todo
+// internal/core/service/note/service.go
+package note
 
 import (
     "context"
@@ -378,63 +378,63 @@ func NewService(cfg *configs.Config, log logger.Logger, repo outbound.Repository
     }
 }
 
-func (s *Service) GetTodoByID(ctx context.Context, id string) (*domain.Todo, error) {
+func (s *Service) GetNoteByID(ctx context.Context, id string) (*domain.Note, error) {
     ctx, span := tracer.Trace(ctx)
     defer span.End()
 
     var (
-        repoTodo = s.repo.GetTodoRepository()
+        repoNote = s.repo.GetNoteRepository()
     )
 
-    todo, err := repoTodo.GetTodoByID(ctx, id)
+    note, err := repoNote.GetNoteByID(ctx, id)
     if err != nil {
         return nil, fail.Wrap(err)
     }
-    return todo, nil
+    return note, nil
 }
 
-func (s *Service) CreateTodo(ctx context.Context, todo *domain.Todo) error {
+func (s *Service) CreateNote(ctx context.Context, note *domain.Note) error {
     ctx, span := tracer.Trace(ctx)
     defer span.End()
 
     var (
-        repoTodo = s.repo.GetTodoRepository()
+        repoNote = s.repo.GetNoteRepository()
     )
 
-    return repoTodo.CreateTodo(ctx, todo)
+    return repoNote.CreateNote(ctx, note)
 }
 
-func (s *Service) UpdateTodo(ctx context.Context, todo *domain.Todo) error {
+func (s *Service) UpdateNote(ctx context.Context, note *domain.Note) error {
     ctx, span := tracer.Trace(ctx)
     defer span.End()
 
     var (
-        repoTodo = s.repo.GetTodoRepository()
+        repoNote = s.repo.GetNoteRepository()
     )
 
-    return repoTodo.UpdateTodo(ctx, todo)
+    return repoNote.UpdateNote(ctx, note)
 }
 
-func (s *Service) DeleteTodo(ctx context.Context, id string) error {
+func (s *Service) DeleteNote(ctx context.Context, id string) error {
     ctx, span := tracer.Trace(ctx)
     defer span.End()
 
     var (
-        repoTodo = s.repo.GetTodoRepository()
+        repoNote = s.repo.GetNoteRepository()
     )
 
-    return repoTodo.DeleteTodo(ctx, id)
+    return repoNote.DeleteNote(ctx, id)
 }
 
-func (s *Service) ListTodo(ctx context.Context, req *domain.TodoFilter, pagination *pagination.Pagination) (*[]domain.Todo, error) {
+func (s *Service) ListNote(ctx context.Context, req *domain.NoteFilter, pagination *pagination.Pagination) (*[]domain.Note, error) {
     ctx, span := tracer.Trace(ctx)
     defer span.End()
 
     var (
-        repoTodo = s.repo.GetTodoRepository()
+        repoNote = s.repo.GetNoteRepository()
     )
 
-    res, err := repoTodo.ListTodos(ctx, req, pagination)
+    res, err := repoNote.ListNote(ctx, req, pagination)
     if err != nil {
         return nil, err
     }
@@ -479,7 +479,7 @@ Inbound adapters are the entry points to your application.
 #### HTTP Adapter
 
 ```go
-// internal/adapter/inbound/http/handler/todo.go
+// internal/adapter/inbound/http/handler/note.go
 package handler
 
 import (
@@ -492,45 +492,45 @@ import (
     "github.com/gofiber/fiber/v2"
 )
 
-type TodoHandler struct {
+type NoteHandler struct {
     cfg *configs.Config
     log logger.Logger
-    svc inbound.Todo
+    svc inbound.Note
 }
 
-func NewTodoHandler(cfg *configs.Config, log logger.Logger, svc inbound.Todo) *TodoHandler {
-    return &TodoHandler{
+func NewNoteHandler(cfg *configs.Config, log logger.Logger, svc inbound.Note) *NoteHandler {
+    return &NoteHandler{
         cfg: cfg,
         log: log,
         svc: svc,
     }
 }
 
-func (h *TodoHandler) RegisterRoutes(app *fiber.App) {
-    app.Get("/todos/:id", h.GetTodoByID)
-    app.Post("/todos", h.CreateTodo)
-    app.Put("/todos/:id", h.UpdateTodo)
-    app.Delete("/todos/:id", h.DeleteTodo)
-    app.Get("/todos", h.ListTodos)
+func (h *NoteHandler) RegisterRoutes(app *fiber.App) {
+    app.Get("/notes/:id", h.GetNoteByID)
+    app.Post("/notes", h.CreateNote)
+    app.Put("/notes/:id", h.UpdateNote)
+    app.Delete("/notes/:id", h.DeleteNote)
+    app.Get("/notes", h.ListNotes)
 }
 
-// GetTodoByID godoc
-// @Summary      Get Todo by ID
-// @Description  Retrieves a todo by its id
-// @Tags         Todos
+// GetNoteByID godoc
+// @Summary      Get Note by ID
+// @Description  Retrieves a note by its id
+// @Tags         Notes
 // @Accept       json
 // @Produce      json
-// @Param        id   path      string  true  "Todo ID"
-// @Success      200  {object}  response.ResponseSuccess{data=dto.ResGetTodoByID}
+// @Param        id   path      string  true  "Note ID"
+// @Success      200  {object}  response.ResponseSuccess{data=dto.ResGetNoteByID}
 // @Failure      400  {object}  response.ResponseFailed{}
 // @Failure      404  {object}  response.ResponseFailed{}
 // @Failure      500  {object}  response.ResponseFailed{}
-// @Router       /todos/{id} [get]
-func (h *TodoHandler) GetTodoByID(c *fiber.Ctx) error {
+// @Router       /notes/{id} [get]
+func (h *NoteHandler) GetNoteByID(c *fiber.Ctx) error {
 
     var (
-        req dto.ReqGetTodoByID
-        res dto.ResGetTodoByID
+        req dto.ReqGetNoteByID
+        res dto.ResGetNoteByID
         ctx = c.UserContext()
     )
 
@@ -542,21 +542,21 @@ func (h *TodoHandler) GetTodoByID(c *fiber.Ctx) error {
         return fail.Wrap(err).WithFailure(fail.ErrBadRequest)
     }
 
-    todo, err := h.svc.GetTodoByID(ctx, req.ID)
+    note, err := h.svc.GetNoteByID(ctx, req.ID)
     if err != nil {
         return err
     }
 
-    res.Transform(todo)
+    res.Transform(note)
 
-    return response.SuccessOK(c, res, "Todo retrieved successfully")
+    return response.SuccessOK(c, res, "Note retrieved successfully")
 }
 
-func (h *TodoHandler) CreateTodo(c *fiber.Ctx) error {
+func (h *NoteHandler) CreateNote(c *fiber.Ctx) error {
 
     var (
-        req = dto.ReqCreateTodo{}
-        res = dto.ResCreateTodo{}
+        req = dto.ReqCreateNote{}
+        res = dto.ResCreateNote{}
         ctx = c.UserContext()
     )
 
@@ -568,25 +568,64 @@ func (h *TodoHandler) CreateTodo(c *fiber.Ctx) error {
         return fail.Wrap(err).WithFailure(fail.ErrBadRequest)
     }
 
-    todo := req.Transform()
+    note := req.Transform()
 
-    err := h.svc.CreateTodo(ctx, todo)
+    err := h.svc.CreateNote(ctx, note)
     if err != nil {
         return err
     }
 
-    res.Transform(todo)
+    res.Transform(note)
 
-    return response.SuccessCreated(c, res, "Todo created successfully")
+    return response.SuccessCreated(c, res, "Note created successfully")
 }
 ```
+
+#### Subscriber Adapter
+
+The subscriber adapter is an event-driven inbound adapter that consumes messages from Kafka or Redis Streams via Watermill. Handlers register routes for topics; middleware (idempotence, retry, request ID) runs before handlers.
+
+```go
+// internal/adapter/inbound/subscriber/handler/note.go
+package handler
+
+import (
+    "github.com/ThreeDotsLabs/watermill/message"
+    "github.com/redhajuanda/krangka/configs"
+    "github.com/redhajuanda/komon/logger"
+)
+
+type NoteHandler struct {
+    cfg        *configs.Config
+    log        logger.Logger
+    subscriber message.Subscriber
+}
+
+func NewNoteHandler(cfg *configs.Config, log logger.Logger, subscriber message.Subscriber) *NoteHandler {
+    return &NoteHandler{cfg: cfg, log: log, subscriber: subscriber}
+}
+
+// RegisterRoutes registers event handlers for note topics
+func (h *NoteHandler) RegisterRoutes(router *message.Router) {
+    router.AddConsumerHandler("NOTE_CREATED", "note.created", h.subscriber, h.HandleNoteCreated)
+    router.AddConsumerHandler("NOTE_UPDATED", "note.updated", h.subscriber, h.HandleNoteUpdated)
+    router.AddConsumerHandler("NOTE_DELETED", "note.deleted", h.subscriber, h.HandleNoteDeleted)
+}
+
+func (h *NoteHandler) HandleNoteCreated(msg *message.Message) error {
+    // Process event; call inbound.Note service if needed
+    return nil
+}
+```
+
+**Subscriber vs Worker**: The subscriber is event-driven (Kafka/Redis Streams); the worker runs time-triggered or manual jobs (Execute, Schedule, Run).
 
 #### HTTP DTOs
 
 DTOs live in `internal/adapter/inbound/http/handler/dto/` and handle request parsing, validation, and transformation.
 
 ```go
-// internal/adapter/inbound/http/handler/dto/todo.go
+// internal/adapter/inbound/http/handler/dto/note.go
 package dto
 
 import (
@@ -598,56 +637,50 @@ import (
 )
 
 // Request DTOs — parse input and validate
-type ReqCreateTodo struct {
-    Title       string `json:"title"       validate:"required"`
-    Description string `json:"description" validate:"required"`
-    Done        bool   `json:"done"`
+type ReqCreateNote struct {
+    Title   string `json:"title"   validate:"required"`
+    Content string `json:"content" validate:"required"`
 }
 
-func (r *ReqCreateTodo) Validate() error {
+func (r *ReqCreateNote) Validate() error {
     return validator.New().Struct(r)
 }
 
 // Transform converts the request DTO to a domain entity
-func (r *ReqCreateTodo) Transform() *domain.Todo {
-    return &domain.Todo{
-        ID:          ulid.Make().String(),
-        Title:       r.Title,
-        Description: r.Description,
-        Done:        r.Done,
+func (r *ReqCreateNote) Transform() *domain.Note {
+    return &domain.Note{
+        ID:      ulid.Make().String(),
+        Title:   r.Title,
+        Content: r.Content,
     }
 }
 
 // Response DTOs — shape the output, never expose domain internals like DeletedAt
-type ResGetTodoByID struct {
-    ID          string    `json:"id"`
-    Title       string    `json:"title"`
-    Description string    `json:"description"`
-    Done        bool      `json:"done"`
-    CreatedAt   time.Time `json:"created_at"`
-    UpdatedAt   time.Time `json:"updated_at"`
+type ResGetNoteByID struct {
+    ID        string    `json:"id"`
+    Title     string    `json:"title"`
+    Content   string    `json:"content"`
+    CreatedAt time.Time `json:"created_at"`
+    UpdatedAt time.Time `json:"updated_at"`
 }
 
-func (r *ResGetTodoByID) Transform(todo *domain.Todo) {
-    r.ID          = todo.ID
-    r.Title       = todo.Title
-    r.Description = todo.Description
-    r.Done        = todo.Done
-    r.CreatedAt   = todo.CreatedAt
-    r.UpdatedAt   = todo.UpdatedAt
+func (r *ResGetNoteByID) Transform(note *domain.Note) {
+    r.ID        = note.ID
+    r.Title     = note.Title
+    r.Content   = note.Content
+    r.CreatedAt = note.CreatedAt
+    r.UpdatedAt = note.UpdatedAt
 }
 
 // List request — embed pagination directly
-type ReqListTodo struct {
+type ReqListNote struct {
     pagination.Pagination
     Search string `query:"search" validate:"omitempty,max=100"`
-    IsDone *bool  `query:"is_done" validate:"omitempty"`
 }
 
-func (r *ReqListTodo) Transform() *domain.TodoFilter {
-    return &domain.TodoFilter{
+func (r *ReqListNote) Transform() *domain.NoteFilter {
+    return &domain.NoteFilter{
         Search: r.Search,
-        IsDone: r.IsDone,
     }
 }
 ```
@@ -659,7 +692,7 @@ Outbound adapters handle external system communication.
 #### Database Repository
 
 ```go
-// internal/adapter/outbound/mariadb/repositories/todo.go
+// internal/adapter/outbound/mariadb/repositories/note.go
 package repositories
 
 import (
@@ -675,59 +708,58 @@ import (
     "github.com/redhajuanda/komon/tracer"
 )
 
-type todoRepository struct {
-    qwery qwery.Runable
+type noteRepository struct {
+    sikat sikat.Runable
 }
 
-func NewTodoRepository(qwery qwery.Runable) *todoRepository {
-    return &todoRepository{qwery: qwery}
+func NewNoteRepository(sikat sikat.Runable) *noteRepository {
+    return &noteRepository{sikat: sikat}
 }
 
-func (r *todoRepository) GetTodoByID(ctx context.Context, id string) (*domain.Todo, error) {
+func (r *noteRepository) GetNoteByID(ctx context.Context, id string) (*domain.Note, error) {
     ctx, span := tracer.Trace(ctx)
     defer span.End()
 
-    var todo domain.Todo
+    var note domain.Note
 
     query := `
         SELECT 
             id, 
             title, 
-            description, 
-            done
-        FROM todos
+            content
+        FROM notes
         WHERE id = {{ .id }} 
         AND deleted_at = 0
     `
 
-    err := r.qwery.
+    err := r.sikat.
         RunRaw(query).
         WithParam("id", id).
-        ScanStruct(&todo).
+        ScanStruct(&note).
         Query(ctx)
 
     if err != nil {
         if errors.Is(err, sql.ErrNoRows) {
-            return nil, fail.Wrap(err).WithFailure(failure.ErrTodoNotFound)
+            return nil, fail.Wrap(err).WithFailure(failure.ErrNoteNotFound)
         }
         return nil, fail.Wrap(err)
     }
 
-    return &todo, nil
+    return &note, nil
 }
 
-func (r *todoRepository) CreateTodo(ctx context.Context, todo *domain.Todo) error {
+func (r *noteRepository) CreateNote(ctx context.Context, note *domain.Note) error {
     ctx, span := tracer.Trace(ctx)
     defer span.End()
 
     query := `
-        INSERT INTO todos (id, title, description, done) 
-        VALUES ({{ .id }}, {{ .title }}, {{ .description }}, {{ .done }})
+        INSERT INTO notes (id, title, content) 
+        VALUES ({{ .id }}, {{ .title }}, {{ .content }})
     `
 
-    err := r.qwery.
+    err := r.sikat.
         RunRaw(query).
-        WithParams(todo).
+        WithParams(note).
         Query(ctx)
 
     if err != nil {
@@ -737,20 +769,20 @@ func (r *todoRepository) CreateTodo(ctx context.Context, todo *domain.Todo) erro
     return nil
 }
 
-func (r *todoRepository) UpdateTodo(ctx context.Context, todo *domain.Todo) error {
+func (r *noteRepository) UpdateNote(ctx context.Context, note *domain.Note) error {
     ctx, span := tracer.Trace(ctx)
     defer span.End()
 
     query := `
-        UPDATE todos 
-        SET title = {{ .title }}, description = {{ .description }}, done = {{ .done }} 
+        UPDATE notes 
+        SET title = {{ .title }}, content = {{ .content }} 
         WHERE id = {{ .id }} 
         AND deleted_at = 0
     `
 
-    err := r.qwery.
+    err := r.sikat.
         RunRaw(query).
-        WithParams(todo).
+        WithParams(note).
         Query(ctx)
 
     if err != nil {
@@ -760,18 +792,18 @@ func (r *todoRepository) UpdateTodo(ctx context.Context, todo *domain.Todo) erro
     return nil
 }
 
-func (r *todoRepository) DeleteTodo(ctx context.Context, id string) error {
+func (r *noteRepository) DeleteNote(ctx context.Context, id string) error {
     ctx, span := tracer.Trace(ctx)
     defer span.End()
 
     query := `
-        UPDATE todos 
+        UPDATE notes 
         SET deleted_at = UNIX_TIMESTAMP() 
         WHERE id = {{ .id }} 
         AND deleted_at = 0
     `
 
-    err := r.qwery.
+    err := r.sikat.
         RunRaw(query).
         WithParam("id", id).
         Query(ctx)
@@ -783,35 +815,33 @@ func (r *todoRepository) DeleteTodo(ctx context.Context, id string) error {
     return nil
 }
 
-func (r *todoRepository) ListTodos(ctx context.Context, req *domain.TodoFilter, pagination *pagination.Pagination) (*[]domain.Todo, error) {
+func (r *noteRepository) ListNote(ctx context.Context, req *domain.NoteFilter, pagination *pagination.Pagination) (*[]domain.Note, error) {
     ctx, span := tracer.Trace(ctx)
     defer span.End()
 
-    todos := make([]domain.Todo, 0)
+    notes := make([]domain.Note, 0)
 
     query := `
-        SELECT id, title, description, done, created_at, updated_at, deleted_at
-        FROM todos
+        SELECT id, title, content, created_at, updated_at, deleted_at
+        FROM notes
         WHERE deleted_at = 0
-        {{ if .search }} AND (title LIKE CONCAT('%', {{ .search }}, '%') OR description LIKE CONCAT('%', {{ .search }}, '%')) {{ end }}
-        {{ if .is_done }} AND done = {{ .is_done }} {{ end }}
+        {{ if .search }} AND (title LIKE CONCAT('%', {{ .search }}, '%') OR content LIKE CONCAT('%', {{ .search }}, '%')) {{ end }}
     `
 
-    err := r.qwery.
+    err := r.sikat.
         RunRaw(query).
         WithParams(map[string]any{
-            "search":  req.Search,
-            "is_done": req.IsDone,
+            "search": req.Search,
         }).
         WithPagination(pagination).
         WithOrderBy("-created_at", "id").
-        ScanStructs(&todos).
+        ScanStructs(&notes).
         Query(ctx)
 
     if err != nil {
         return nil, fail.Wrap(err)
     }
-    return &todos, nil
+    return &notes, nil
 }
 ```
 
@@ -836,14 +866,14 @@ func (r *todoRepository) ListTodos(ctx context.Context, req *domain.TodoFilter, 
 #### 4. Repository Best Practices
 - Use `RunRaw()` with inline SQL queries
 - Write SQL queries directly in repository methods using multi-line strings
-- Use Qwery template syntax (`{{ .field }}`) for parameterized queries
+- Use Sikat template syntax (`{{ .field }}`) for parameterized queries
 - Always call `tracer.Trace(ctx)` and `defer span.End()` at the start of every method
 - Always use `WithPagination()` and `WithOrderBy()` when listing data with pagination
 - Include `WHERE deleted_at = 0` in all SELECT and UPDATE queries
 - Use `{{ if .field }}` for optional filter conditions
 
 #### 5. Performance
-- Use connection pooling for databases (handled by Qwery)
+- Use connection pooling for databases (handled by Sikat)
 - Optimize queries with appropriate indexes
 
 ## Error Handling
@@ -857,7 +887,7 @@ All errors in Krangka use `github.com/redhajuanda/komon/fail`. This package reco
 return fail.Wrap(err)
 
 // Map to a typed failure (changes HTTP status code and error code in response)
-return fail.Wrap(err).WithFailure(failure.ErrTodoNotFound)
+return fail.Wrap(err).WithFailure(failure.ErrNoteNotFound)
 
 // Wrap with a built-in failure type (e.g., bad request)
 return fail.Wrap(err).WithFailure(fail.ErrBadRequest)
@@ -873,11 +903,8 @@ package failure
 import "github.com/redhajuanda/komon/fail"
 
 var (
-    ErrTodoNotFound      = &fail.Failure{Code: "404001", Message: "Todo not found",      HTTPStatus: 404}
-    ErrTodoAlreadyExists = &fail.Failure{Code: "409001", Message: "Todo already exists", HTTPStatus: 409}
-
-    ErrNoteNotFound      = &fail.Failure{Code: "404001", Message: "Note not found",      HTTPStatus: 404}
-    ErrNoteAlreadyExists = &fail.Failure{Code: "409001", Message: "Note already exists", HTTPStatus: 409}
+    ErrNoteNotFound      = &fail.Failure{Code: "404002", Message: "Note not found",      HTTPStatus: 404}
+    ErrNoteAlreadyExists = &fail.Failure{Code: "409002", Message: "Note already exists", HTTPStatus: 409}
 )
 ```
 
@@ -888,24 +915,41 @@ var (
 | Repository | `fail.Wrap(err)` — always wrap; map sentinel errors with `.WithFailure(failure.ErrXxx)` |
 | Service | `fail.Wrap(err)` — wrap when adding context; propagate otherwise |
 | HTTP Handler | `fail.Wrap(err).WithFailure(fail.ErrBadRequest)` for parse/validation errors; propagate service errors |
+| Subscriber Handler | Return error to trigger retry (Nack); return nil to ACK. Use `fail.Wrap(err)` when wrapping |
 
 ## Component Interaction
 
 ### Dependency Flow
 
+**HTTP (request-driven):**
 ```
-HTTP Handler → Todo Service → Todo Repository → Database
+HTTP Handler → Note Service → Note Repository → Database
      ↓              ↓              ↓
   DTOs         Domain Logic    SQL Queries
 ```
 
-### Example Flow: Creating a Todo
+**Subscriber (event-driven):**
+```
+Event (Kafka/Redis) → Subscriber Handler → [Note Service] → [Repository] → Database
+         ↓                    ↓
+   Idempotency          Domain Logic
+   (middleware)
+```
+
+### Example Flow: Creating a Note (HTTP)
 
 1. **HTTP Handler** receives request, parses and validates DTO
 2. **DTO** `Transform()` builds the domain entity (generates ID with `ulid.Make()`)
 3. **Service** delegates to repository (applies business rules if any)
-4. **Repository** persists the entity to database via Qwery
+4. **Repository** persists the entity to database via Sikat
 5. **Response DTO** maps the domain entity back for the HTTP response
+
+### Example Flow: Processing a Note Event (Subscriber)
+
+1. **Subscriber** receives message from topic (e.g. `note.created`)
+2. **Idempotency middleware** ensures at-most-once processing via `TryClaim`
+3. **Handler** processes the event (optionally calls inbound port services)
+4. **Retry middleware** handles transient failures with backoff
 
 ### Testing Strategy
 

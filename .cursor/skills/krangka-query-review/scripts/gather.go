@@ -16,8 +16,8 @@ import (
 	"time"
 
 	"github.com/redhajuanda/komon/logger"
+	"github.com/redhajuanda/komon/pagination"
 	"github.com/redhajuanda/qwery"
-	"github.com/redhajuanda/qwery/pagination"
 )
 
 type BuiltVariant struct {

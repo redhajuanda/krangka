@@ -1,0 +1,96 @@
+---
+description: Agent must clearly announce rules applied, every skill used, and every file read in chat
+alwaysApply: true
+---
+
+# Agent Transparency
+
+When you use a skill, read a file, or have rules applied to your context, **always** state it clearly in your reply so the user can see exactly what is in effect. Do not skip any.
+
+## Rules applied
+
+- **When rules apply** to the current conversation (e.g. from `.cursor/rules/`), list them at the start of your reply so the user knows which rules you are following.
+- Use a consistent format. List each rule that applies (by its description or filename).
+
+**Format:**
+
+```
+**Apply:**
+- rule 1 (e.g. `krangka_code_style` — code style)
+- rule 2 (e.g. `krangka_go_testing` — Go testing)
+- rule 3 (e.g. `agent_transparency` — this rule)
+```
+
+- If only one rule applies, still announce it: **Apply:** rule name/description.
+- Do not skip: every rule that is in your context for this reply must be listed.
+
+## Skills
+
+- **Before or when using a skill**, say explicitly which skill you are using.
+- Use a consistent, visible format so it stands out in the chat.
+
+**Format:** Start the relevant part of your message with a clear line such as:
+
+```
+**Using skill:** `skill-name` (e.g. `krangka-expert`, `krangka-query-review`, `create-rule`)
+```
+
+- If you use **multiple skills** in one reply, list each one.
+- If you only read the skill file to follow its instructions, still say you used that skill (e.g. "Using skill: create-rule").
+
+## Files read
+
+- **For every file you read** (via Read, or when a tool reads a file), tell the user which file(s) you read.
+- One file or many, do not omit any.
+
+**Always use the full path** (relative to project root). Never refer to a file by only its basename or a vague label.
+
+- ❌ **Wrong:** "Reading README.md" or "checkout readme" or "krangka docs" — ambiguous when multiple READMEs or docs exist.
+- ✅ **Right:** `README.md` (root), `.krangka/docs/README.md`, `.krangka/docs/01_architecture-overview.md` — each file with its path so the user knows exactly which one.
+
+**Format:** List each file with its path on its own line or in a clear list:
+
+```
+**Reading:**
+- `README.md`
+- `.krangka/docs/README.md`
+- `.krangka/docs/01_architecture-overview.md`
+```
+
+- When reading from a folder (e.g. `.krangka/docs/`), **list each file you read by full path** — do not say "krangka docs" or "documentation"; name every file (e.g. `.krangka/docs/README.md`, `.krangka/docs/01_architecture-overview.md`).
+- Same-name files in different directories (e.g. two `README.md`) must always be distinguished by path.
+- If you read a file in the same message where you use a skill, mention both: the skill and the file(s) with paths.
+
+## Example
+
+Good opening when rules apply, you used one skill, and read two files:
+
+```
+**Apply:**
+- `krangka_code_style`
+- `agent_transparency`
+
+**Using skill:** `krangka-expert`  
+**Reading:**
+- `.cursor/skills/krangka-expert/SKILL.md`
+- `internal/core/service/todo/service.go`
+
+[Then your actual answer or actions...]
+```
+
+When reading project docs and multiple READMEs exist, always distinguish by path:
+
+```
+**Reading:**
+- `README.md` (project root)
+- `.krangka/docs/README.md`
+- `.krangka/docs/01_architecture-overview.md`
+```
+
+## Rules
+
+1. **Whenever rules apply**, announce them: list each rule in effect at the start (e.g. **Apply:** rule 1, rule 2). Do not skip any rule that is in your context.
+2. **Never skip** a skill or a file: every skill use and every file read in your reply must be announced.
+3. **Always use full paths** for files (relative to project root). No bare filenames like "README.md" alone; no vague labels like "krangka docs" — list each file with its path.
+4. **Announce before or at the start** of the action (e.g. at the beginning of your message or right before the paragraph where you use that tool).
+5. Keep the format consistent so the user can quickly scan for **Apply**, **Using skill**, and **Reading** in every response.

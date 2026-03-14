@@ -2,187 +2,23 @@ schema: spec-driven
 
 # Project context for Krangka - Hexagonal Architecture Go Application
 context: |
-  # Tech Stack
-  - Language: Go 1.24.2+
-  - Architecture: Hexagonal Architecture (Ports & Adapters)
-  - HTTP Framework: Fiber
-  - Database: MariaDB/PostgreSQL with Qwery ORM
-  - Cache: Redis
-  - Dependency Injection: Uber FX
-  - Logging: Structured logging with logger package
-  - CLI: Cobra
-  - Configuration: YAML-based with environment support
-  - Documentation: Swagger/OpenAPI
-  - Testing: Go testing framework with testify
-  
-  # Development Methodology
-  - **Test-Driven Development (TDD)**: ALWAYS write tests FIRST before implementation
-  - Follow Red-Green-Refactor cycle: Write failing test → Make it pass → Refactor
-  - Write unit tests for domain logic and services before writing the actual code
-  - Write integration tests for adapters (repositories, handlers)
-  - Test coverage should be meaningful, not just for numbers
-  - Tests are documentation - they show how the code should be used
-  
-  # Domain-Driven Design (DDD) Principles
-  - **Ubiquitous Language**: Use consistent terminology between code and business
-  - **Bounded Context**: Clear boundaries between different domain areas
-  - **Entities**: Objects with unique identity (e.g., User, Order)
-  - **Value Objects**: Immutable objects without identity (e.g., Address, Money)
-  - **Aggregates**: Cluster of entities and value objects with a root entity
-  - **Domain Events**: Capture important business events
-  - **Repositories**: Abstract data access for aggregates
-  - **Services**: Coordinate domain logic that doesn't belong to entities
-  - Rich domain models with behavior, not anemic models with only data
-  
-  # Architecture Principles (Hexagonal + DDD)
-  - Dependencies point inward (External → Adapters → Ports → Services → Domain)
-  - Core business logic is independent from external dependencies
-  - Interfaces (ports) define contracts between layers
-  - Adapters implement port interfaces
-  - No external dependencies in domain and service layers
-  - Domain layer contains business rules and invariants
-  - Domain entities encapsulate business logic and validation
-  
-  # Project Structure
-  - internal/adapter/inbound/: Entry points (HTTP, Workers, CLI)
-  - internal/adapter/outbound/: External systems (MariaDB, PostgreSQL, Redis)
-  - internal/core/domain/: Pure business entities
-  - internal/core/port/: Interface definitions (inbound & outbound)
-  - internal/core/service/: Business logic and use cases
-  - shared/: Common utilities (logger, errors, FX events)
-  
-  # Conventions
-  - Use Repository pattern for data access
-  - Use Service layer for business logic
-  - Use DTO pattern for API request/response
-  - SQL queries in separate .sql files under queries/ directory (only for RDBMS)
-  - SQL queries using text/template package for dynamic queries
-  - Migration files: YYYYMMDDHHMMSS-description.sql
-  - Use Qwery package for SQL operations
-  - Use ULID for IDs if needed for seeder or other purposes (generate via: go run main.go worker generate-id)
-  - Structured logging with logger.Logger
-  - Environment-based configuration (development.yaml, production.yaml)
-  - Consider implementing middleware for cross-cutting concerns (e.g., logging, authentication)
-  - Write correct, up-to-date, bug-free, fully functional, secure, and efficient Go code
-  
-  # Worker Conventions (Krangka Standard)
-  - **Scheduled Tasks**: Use Kubernetes CronJob with OneTime workers (preferred)
-  - **Continuous Tasks**: Use Kubernetes Deployment with LongRunning workers
-  - **Periodic Workers**: Only use when explicitly requested or scheduling must be application-managed
-  - Workers are inbound adapters - keep them thin, delegate to services
-  - All workers implement Workerer interface (Start, Stop methods)
-  - Follow TDD: write worker tests before implementation
-  
-  # Testing Conventions (TDD)
-  - **ALWAYS** write tests BEFORE writing implementation code
-  - Unit tests: Test domain entities and services in isolation
-  - Integration tests: Test adapters with real/test dependencies
-  - Use testify/suite for complex test scenarios
-  - Use testify/mock for mocking interfaces
-  - Use testify/assert for assertions
-  - Table-driven tests for multiple scenarios
-  - Test file naming: filename_test.go (same package as code)
-  - Test function naming: TestTypeName_MethodName_Scenario (e.g., TestTodo_Complete_WithValidStatus)
-  - Mock naming: mockTypeName (e.g., mockTodoRepository)
-  - Test helpers in testing package when shared across tests
-  - Avoid testing framework/library code, focus on business logic
-  - Aim for high test coverage of domain and service layers (>80%)
-  - Integration tests can have lower coverage but cover critical paths
-  
-  # File Naming
-  - Domain entities: entity.go (e.g., todo.go, note.go)
-  - Domain tests: entity_test.go (e.g., todo_test.go)
-  - Services: service.go in service/entity/ directory
-  - Service tests: service_test.go in service/entity/ directory
-  - Repositories: entity.go in repositories/ directory
-  - Repository tests: entity_test.go in repositories/ directory
-  - Handlers: entity.go in handler/ directory
-  - Handler tests: entity_test.go in handler/ directory
-  - DTOs: entity.go in handler/dto/ directory
-  - SQL Queries: OperationName.sql (e.g., GetTodoByID.sql)
-  - Test files: Always use _test.go suffix, placed in same directory as code
-  
-  # Code Standards (TDD + DDD Focused)
-  - **TDD Workflow**: ALWAYS write tests first (Red → Green → Refactor)
-  - Write unit tests for domain entities to verify business rules and invariants
-  - Write unit tests for services with mocked dependencies
-  - Write integration tests for repositories and adapters
-  - Use table-driven tests for multiple scenarios
-  - Use testify/assert and testify/mock for testing
-  - Test names should describe behavior: TestEntityName_MethodName_Scenario
-  - **Domain Layer**: Rich domain models with business logic, validation, and invariants
-  - **Domain Layer**: Use methods on entities for business operations, not setters
-  - **Domain Layer**: Value objects should be immutable
-  - **Service Layer**: Coordinate domain operations, handle transactions
-  - **Adapters**: No business logic in handlers, workers, or repositories
-  - No external framework imports in core (domain, service, ports)
-  - Keep domain entities pure (no db tags, framework dependencies)
-  - Use interfaces (ports) for all external dependencies
-  - Implement proper error handling with custom error types
-  - Always include logging for important operations
-  
-  # Domain
-  - This is Krangka: A Go boilerplate for Krangka 
-  - Provides quick start for building backend services
-  - **Core Philosophy**: Test-Driven Development (TDD) + Domain-Driven Design (DDD)
-  - Focus on testability, maintainability, and extensibility
-  - Business logic lives in the domain, protected by tests
-  - Tests are first-class citizens, not an afterthought
-  
-  # Documentation References
-  - **ALWAYS** refer to documentation in `docs/` directory for detailed guidance
-  - Available documentation:
-    - `docs/01_architecture-overview.md`: Hexagonal architecture principles, layer responsibilities, design patterns
-    - `docs/02_project-structure.md`: Detailed project structure, file organization, naming conventions
-    - `docs/03_core-components.md`: Core components details, responsibilities of each layer
-    - `docs/04_adding-new-features.md`: Step-by-step guide for adding new features
-    - `docs/05_error_handling.md`: Error handling patterns and best practices
-    - `docs/06_creating-workers.md`: Complete guide for creating background workers (OneTime, Periodic, LongRunning)
-    - `docs/README.md`: Documentation overview and index
-  - When creating proposals/specs/tasks, consult relevant documentation
-  - Follow patterns and examples shown in documentation
-  - If documentation conflicts with user request, ask for clarification
+  Use **krangka-related skills only** for architecture, conventions, and implementation guidance. Do not duplicate or explain that content here.
+  - **krangka-expert**: Architecture, adding features, errors, repos, pagination, outbox, bootstrap, workers, subscribers, dlock, logger, testing, code style. Read the skill and its references as needed.
+  - **krangka-install**: Installing CLI, creating a new project, config, Docker, migrate, running http/subscriber/worker. Use when setting up a new Krangka project.
+  - **krangka-upgrade**: Upgrading the framework from current version to latest. Use when upgrading krangka version.
+  - **krangka-query-review**: Generating query review documents from Sikat RunRaw/Run usage. Use when reviewing or documenting SQL queries.
+  If a skill conflicts with the user request, ask for clarification.
 
 # Per-artifact rules
 rules:
   proposal:
-    - Keep proposals focused and under 1000 words
-    - Always include "Goals" and "Non-goals" sections
-    - Describe impact on hexagonal architecture layers
-    - Identify domain concepts, entities, value objects, and aggregates (DDD)
-    - Consider testability and maintainability (TDD mindset)
-    - Identify which ports and adapters are affected
-    - Define acceptance criteria that can be converted to tests
-    - Use ubiquitous language from the business domain
-    - Reference relevant documentation sections when applicable
+    - Use skill **krangka-expert** for architecture, layers, DDD, and acceptance criteria.
+    - Keep proposals under 1000 words; include Goals and Non-goals; use ubiquitous language.
   
   spec:
-    - Consult `docs/05_error_handling.md` for standard error response formats
-    - Follow OpenAPI 3.0 specification format
-    - Document all request/response DTOs
-    - Include error responses (400, 404, 500) following docs/05_error_handling.md patterns
-    - Specify authentication requirements if applicable
-    - Use clear, descriptive endpoint names
-    - Follow RESTful conventions
+    - Use skill **krangka-expert** (error-handling, code style) for error formats and DTOs.
+    - OpenAPI 3.0; RESTful; document request/response and error responses; auth if applicable.
   
   tasks:
-    - consult `docs/04_adding-new-features.md` for step-by-step feature implementation guide
-    - Refer to `docs/02_project-structure.md` for correct file locations and naming
-    - Refer to `docs/05_error_handling.md` for proper error handling patterns
-    - Refer to `docs/06_creating-workers.md` when creating background workers
-    - Follow TDD approach - ALWAYS create test tasks BEFORE implementation tasks
-    - Task order: Write Test (Red) → Implement Code (Green) → Refactor (if needed)
-    - Break tasks by architectural layer following TDD cycle:
-      - 1. Write domain entity tests + domain entities (with business logic)
-      - 2. Write port interface definitions
-      - 3. Write service tests (with mocks) + service implementation
-      - 4. Write repository tests + repository implementation
-      - 5. Write handler tests + handler implementation
-      - 6. Write integration tests
-    - Each task should follow Red-Green-Refactor pattern
-    - Test task should describe the expected behavior being tested
-    - Implementation task makes the failing test pass
-    - Include migration tasks for database changes (after domain is defined)
-    - Specify affected files and directories following docs/02_project-structure.md
-    - Tasks should align with hexagonal architecture and DDD principles
-    - Use ubiquitous language in task descriptions
+    - Use skill **krangka-expert** for file locations, TDD order, review gate, and layer breakdown.
+    - Follow canonical feature order and references from krangka-expert (adding-features, repository, workers, bootstrap, testing).

@@ -1,6 +1,6 @@
 package outbound
 
-//go:generate mockgen -source=publisher.go -destination=../../../mocks/outbound/mock_publisher.go -package=mocks
+//go:generate mockgen -source=publisher.go -destination=../../../mocks/outbound/mock_publisher.go -package=mocks_outbound
 
 import "github.com/ThreeDotsLabs/watermill/message"
 

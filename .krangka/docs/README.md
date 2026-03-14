@@ -9,17 +9,11 @@ Welcome to the Krangka documentation. This documentation provides comprehensive 
 - [**Project Structure**](./02_project-structure.md) - Detailed breakdown of directories and files
 - [**Core Components**](./03_core-components.md) - Domain, Ports, Services, and Adapters explained
 
-### 🔧 Technical References
-- [**Adding New Features**](./04_adding-new-features.md) - Step-by-step guide to adding features
-- [**Error Handling**](./05_error_handling.md) - Error handling and best practices
-- [**Creating Workers**](./06_creating-workers.md) - Guide to creating background workers
-
-
 ## 🔗 External Resources
 
 - **Krangka CLI**: `go install github.com/redhajuanda/krangka/cli/krangka@latest`
-- **Qwery SDK**: [README — SQL template runner, pagination, transactions](https://github.com/redhajuanda/qwery)
-- **komon Package**: [Shared Utilities](https://github.com/redhajuanda/komon)
+- **Komon Package**: [README](https://github.com/redhajuanda/komon) — Logging, Tracing, Metrics, etc.
+- **Qwery Package**: [README](https://github.com/redhajuanda/qwery) — SQL template runner, pagination, transactions
 
 ## 📝 Contributing to Documentation
 
@@ -40,3 +34,6 @@ If you need help with Krangka:
 3. Contact the platform team for support
 
 ---
+
+**Last Updated**: March 2026
+**Version**: 1.0.2

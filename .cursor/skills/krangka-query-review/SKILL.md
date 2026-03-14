@@ -1,11 +1,11 @@
 ---
 name: krangka-query-review
-description: Gathers qwery RunRaw and Run queries from the repository and generates a review document. Use when the user asks to generate a query review document, review database queries, or document SQL queries for review.
+description: Gathers Sikat RunRaw and Run queries from the repository and generates a review document. Use when the user asks to generate a query review document, review database queries, or document SQL queries for review.
 ---
 
 # Query Review Document Generator
 
-Generates a timestamped markdown document that lists all qwery queries in the repository with their **real** generated form (not templates), explanations, and possible qwery appends. Supports both `RunRaw()` (inline SQL) and `Run()` (SQL from `.sql` files).
+Generates a timestamped markdown document that lists all Sikat queries in the repository with their **real** generated form (not templates), explanations, and possible Sikat appends. Supports both `RunRaw()` (inline SQL) and `Run()` (SQL from `.sql` files).
 
 ## Trigger
 
@@ -56,9 +56,9 @@ If no previous review exists (no `last_hashes.json`), omit the second arg for fu
 1. **Notify the user** — explicitly state that the gather step failed.
 
 2. **Find out why it failed** — capture stderr and exit code. Common causes:
-   - **Network/sandbox:** `no secure protocol found for repository` — Go cannot fetch private GitLab deps (`qwery`, `silib`). Run with `network` or `full_network` permission, or ask the user to run the gather locally.
+   - **Network/sandbox:** `no secure protocol found for repository` — Go cannot fetch private GitLab deps (`sikat`, `silib`). Run with `network` or `full_network` permission, or ask the user to run the gather locally.
    - **Build errors:** Missing dependencies, wrong Go version, syntax errors in the repo.
-   - **Runtime errors:** Panics in gather.go or qwery.Build() failures.
+   - **Runtime errors:** Panics in gather.go or sikat.Build() failures.
 
 3. **Report the failure** — tell the user the exact error message and suggested fix (e.g. "Run the gather command locally with network access" or "Check that `go mod tidy` resolves dependencies").
 
@@ -220,7 +220,7 @@ When recommending an index that requires a different query pattern, include **AI
 - **Other cases:** If an index suggests a different WHERE/JOIN pattern (e.g. avoiding OR, using IN subquery), show the alternative.
 - **Omit** when the index works with the existing query (no change needed).
 
-## qwery Append Reference
+## Sikat Append Reference
 
 Use this to build the **full real query** when the chain has `WithPagination`/`WithOrderBy`:
 
@@ -233,7 +233,7 @@ Use this to build the **full real query** when the chain has `WithPagination`/`W
 | `WithOrderBy("+id")` | `ORDER BY id ASC` |
 | `WithOrderBy("-created_at")` | `ORDER BY created_at DESC` |
 
-See [reference.md](references/reference.md) for full append rules from qwery.md.
+See [reference.md](references/reference.md) for full append rules from sikat.md.
 
 ## Ordering Queries
 

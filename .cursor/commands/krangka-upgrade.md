@@ -2,20 +2,20 @@
 name: /krangka-upgrade
 id: krangka-upgrade
 category: Workflow
-description: Upgrade krangka framework from current version to latest using krangka-upgrader skill
+description: Upgrade krangka framework from current version to latest using krangka-upgrade skill
 ---
 
 Upgrade the krangka framework (boilerplate) to the latest version by reading version reference files and applying migrations in order.
 
-**Skill**: Use the **krangka-upgrader** skill for the full workflow. This command invokes that workflow.
+**Skill**: Use the **krangka-upgrade** skill for the full workflow. This command invokes that workflow.
 
 **Input**: None required. Optionally specify a target version (e.g., `/krangka-upgrade v1.0.5`) to upgrade only up to that version instead of latest.
 
 **Steps**
 
-1. **Read the krangka-upgrader skill**
+1. **Read the krangka-upgrade skill**
 
-   Load `.cursor/skills/krangka-upgrader/SKILL.md` and follow its Upgrade Workflow.
+   Load `.cursor/skills/krangka-upgrade/SKILL.md` and follow its Upgrade Workflow.
 
 2. **Determine current version**
 
@@ -24,7 +24,7 @@ Upgrade the krangka framework (boilerplate) to the latest version by reading ver
 
 3. **Discover available versions**
 
-   - List files in `.cursor/skills/krangka-upgrader/references/`
+   - List files in `.cursor/skills/krangka-upgrade/references/`
    - Parse version numbers from filenames (e.g. `v1.0.1.md` → `1.0.1`)
    - Sort semantically and identify the **latest** version
    - If user specified a target version, use that as the upper bound instead of latest
@@ -37,7 +37,7 @@ Upgrade the krangka framework (boilerplate) to the latest version by reading ver
 5. **Apply each version (in order)**
 
    For each version in the upgrade path:
-   - Read `.cursor/skills/krangka-upgrader/references/vX.Y.Z.md`
+   - Read `.cursor/skills/krangka-upgrade/references/vX.Y.Z.md`
    - Apply Added, Removed, Modified, Dependencies as described
    - Follow migration notes
    - Update `.krangka/.VERSION` after successfully applying

@@ -12,7 +12,7 @@ func TestDirectoryExclusion() {
 		"cli",
 		"internal/adapter/outbound/postgres",
 		"internal/core/service/note",
-		"internal/core/domain/todo.go",
+		"internal/core/domain/note.go",
 		"main.go",
 		"go.mod",
 	}

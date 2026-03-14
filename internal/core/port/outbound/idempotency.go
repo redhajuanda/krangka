@@ -1,6 +1,6 @@
 package outbound
 
-//go:generate mockgen -source=idempotency.go -destination=../../../mocks/outbound/mock_idempotency.go -package=mocks
+//go:generate mockgen -source=idempotency.go -destination=../../../mocks/outbound/mock_idempotency.go -package=mocks_outbound
 
 import (
 	"context"

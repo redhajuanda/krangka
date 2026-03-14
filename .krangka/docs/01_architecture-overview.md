@@ -115,13 +115,13 @@ These are the external systems your application depends on.
 Define contracts for external systems that drive your application.
 
 ```go
-// Example: Todo service interface
-type Todo interface {
-    GetTodoByID(ctx context.Context, id string) (*domain.Todo, error)
-    CreateTodo(ctx context.Context, todo *domain.Todo) error
-    UpdateTodo(ctx context.Context, todo *domain.Todo) error
-    DeleteTodo(ctx context.Context, id string) error
-    ListTodo(ctx context.Context, req *domain.TodoFilter, pagination *pagination.Pagination) (*[]domain.Todo, error)
+// Example: Note service interface
+type Note interface {
+    GetNoteByID(ctx context.Context, id string) (*domain.Note, error)
+    CreateNote(ctx context.Context, note *domain.Note) error
+    UpdateNote(ctx context.Context, note *domain.Note) error
+    DeleteNote(ctx context.Context, id string) error
+    ListNote(ctx context.Context, req *domain.NoteFilter, pagination *pagination.Pagination) (*[]domain.Note, error)
 }
 ```
 
@@ -132,7 +132,6 @@ Define contracts for external systems your application depends on.
 // Example: Repository interface
 type Repository interface {
     DoInTransaction(ctx context.Context, fn func(ctx context.Context) error) (any, error)
-    GetTodoRepository() repositories.Todo
     GetNoteRepository() repositories.Note
 }
 
@@ -160,7 +159,7 @@ External Systems → Inbound Adapters → Inbound Ports → Services → Outboun
 - **Architecture**: Hexagonal Architecture (Ports & Adapters)
 - **Dependency Injection**: Manual wiring through bootstrap pattern
 - **HTTP Framework**: Fiber
-- **Database**: MariaDB/PostgreSQL with Qwery ORM (inline SQL queries)
+- **Database**: MariaDB/PostgreSQL with Sikat ORM (inline SQL queries)
 - **Cache**: Redis
 - **Logging**: Structured logging with `github.com/redhajuanda/komon/logger`
 - **Tracing**: Distributed tracing with `github.com/redhajuanda/komon/tracer`
@@ -178,12 +177,12 @@ External Systems → Inbound Adapters → Inbound Ports → Services → Outboun
 Abstracts data access logic and provides a collection-like interface.
 
 ```go
-type TodoRepository interface {
-    GetByID(ctx context.Context, id string) (*domain.Todo, error)
-    Create(ctx context.Context, todo *domain.Todo) error
-    Update(ctx context.Context, todo *domain.Todo) error
+type NoteRepository interface {
+    GetByID(ctx context.Context, id string) (*domain.Note, error)
+    Create(ctx context.Context, note *domain.Note) error
+    Update(ctx context.Context, note *domain.Note) error
     Delete(ctx context.Context, id string) error
-    List(ctx context.Context, filter *domain.TodoFilter) ([]*domain.Todo, error)
+    List(ctx context.Context, filter *domain.NoteFilter) ([]*domain.Note, error)
 }
 ```
 
@@ -191,27 +190,27 @@ type TodoRepository interface {
 Encapsulates business logic and orchestrates domain operations.
 
 ```go
-type TodoService struct {
+type NoteService struct {
     repo  Repository
     cache Cache
 }
 
-func (s *TodoService) GetTodoByID(ctx context.Context, id string) (*domain.Todo, error) {
+func (s *NoteService) GetNoteByID(ctx context.Context, id string) (*domain.Note, error) {
     // Check cache first
-    if cached, err := s.cache.Get(ctx, "todo:"+id); err == nil {
-        return cached.(*domain.Todo), nil
+    if cached, err := s.cache.Get(ctx, "note:"+id); err == nil {
+        return cached.(*domain.Note), nil
     }
     
     // Get from repository
-    todo, err := s.repo.GetTodoRepository().GetByID(ctx, id)
+    note, err := s.repo.GetNoteRepository().GetByID(ctx, id)
     if err != nil {
         return nil, err
     }
     
     // Cache the result
-    s.cache.Set(ctx, "todo:"+id, todo, time.Hour)
+    s.cache.Set(ctx, "note:"+id, note, time.Hour)
     
-    return todo, nil
+    return note, nil
 }
 ```
 
@@ -219,12 +218,12 @@ func (s *TodoService) GetTodoByID(ctx context.Context, id string) (*domain.Todo,
 Data Transfer Objects for API request/response handling.
 
 ```go
-type CreateTodoRequest struct {
-    Title       string `json:"title" validate:"required"`
-    Description string `json:"description"`
+type CreateNoteRequest struct {
+    Title   string `json:"title" validate:"required"`
+    Content string `json:"content"`
 }
 
-type CreateTodoResponse struct {
+type CreateNoteResponse struct {
     ID string `json:"id"`
 }
 ```
@@ -233,8 +232,8 @@ type CreateTodoResponse struct {
 Creates and configures complex objects.
 
 ```go
-func NewTodoService(cfg *configs.Config, repo Repository, cache Cache) *TodoService {
-    return &TodoService{
+func NewNoteService(cfg *configs.Config, repo Repository, cache Cache) *NoteService {
+    return &NoteService{
         cfg:   cfg,
         repo:  repo,
         cache: cache,
@@ -269,7 +268,7 @@ func NewTodoService(cfg *configs.Config, repo Repository, cache Cache) *TodoServ
 ### 1. Leaky Abstractions
 ❌ **Don't**: Expose database-specific details in domain entities
 ```go
-type Todo struct {
+type Note struct {
     ID        string    `json:"id" db:"id"`
     Title     string    `json:"title" db:"title"`
     CreatedAt time.Time `json:"created_at" db:"created_at"`
@@ -278,19 +277,19 @@ type Todo struct {
 
 ✅ **Do**: Keep domain entities pure
 ```go
-type Todo struct {
-    ID        string    `qwery:"id"`
-    Title     string    `qwery:"title"`
-    CreatedAt time.Time `qwery:"created_at"`
+type Note struct {
+    ID        string    `sikat:"id"`
+    Title     string    `sikat:"title"`
+    CreatedAt time.Time `sikat:"created_at"`
 }
 ```
 
 ### 2. Business Logic in Adapters
 ❌ **Don't**: Put business rules in HTTP handlers
 ```go
-func (h *TodoHandler) CreateTodo(c *fiber.Ctx) error {
+func (h *NoteHandler) CreateNote(c *fiber.Ctx) error {
     // Business logic here
-    if todo.Title == "" {
+    if note.Title == "" {
         return errors.New("title cannot be empty")
     }
     // ...
@@ -299,11 +298,11 @@ func (h *TodoHandler) CreateTodo(c *fiber.Ctx) error {
 
 ✅ **Do**: Keep business logic in services
 ```go
-func (s *TodoService) CreateTodo(ctx context.Context, todo *domain.Todo) error {
-    if err := todo.Validate(); err != nil {
+func (s *NoteService) CreateNote(ctx context.Context, note *domain.Note) error {
+    if err := note.Validate(); err != nil {
         return err
     }
-    return s.repo.Create(ctx, todo)
+    return s.repo.Create(ctx, note)
 }
 ```
 
@@ -355,7 +354,7 @@ type Dependency struct {
     serviceNote  Resource[*note.Service]
     httpHandlers Resource[[]http.Handler]
     
-    qweryMain    ResourceClosable[*mariadb.Qwery]
+    sikatMain    ResourceClosable[*mariadb.Sikat]
     redis        ResourceClosable[*redis.Redis]
     http         ResourceRunnable[*http.HTTP]
     migrate      ResourceExecutable[*migrate.Migrate]

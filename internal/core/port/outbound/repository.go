@@ -1,6 +1,6 @@
 package outbound
 
-//go:generate mockgen -source=repository.go -destination=../../../mocks/outbound/mock_repository.go -package=mocks
+//go:generate mockgen -source=repository.go -destination=../../../mocks/outbound/mock_repository.go -package=mocks_outbound
 
 import (
 	"context"

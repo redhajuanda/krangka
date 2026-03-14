@@ -27,11 +27,19 @@ import (
 //go:embed exclude-config.json
 var excludeConfigFS embed.FS
 
+// PartialDir specifies which files inside a directory should be copied; everything else is skipped.
+// Matched files are always overwritten (never treated as conflicts when target is ".").
+type PartialDir struct {
+	Include []string `json:"include"` // file patterns (matched against path relative to the dir)
+}
+
 // ExclusionConfig holds configuration for what to exclude
 type ExclusionConfig struct {
-	Files       []string `json:"files"`       // File patterns to exclude (glob patterns)
-	Directories []string `json:"directories"` // Directory patterns to exclude
-	CodeBlocks  []string `json:"code_blocks"` // Code block markers to exclude
+	Files              []string              `json:"files"`                 // File patterns to exclude (glob patterns)
+	Directories        []string              `json:"directories"`           // Directory patterns to exclude
+	CodeBlocks         []string              `json:"code_blocks"`           // Code block markers to exclude
+	CurrentDirSkipDirs []string              `json:"current_dir_skip_dirs"` // Dirs silently skipped (no conflict check, no copy) when target is "."
+	PartialDirs        map[string]PartialDir `json:"partial_dirs"`          // Dirs where only listed files are copied (always overwritten)
 }
 
 var (
@@ -48,6 +56,36 @@ var (
 func Commands() []*cobra.Command {
 	gonewCmd.PersistentFlags().StringVarP(&srcMod, "source mod", "m", "github.com/redhajuanda/krangka", "based boilerplate code")
 	return []*cobra.Command{gonewCmd}
+}
+
+// inPartialDir checks whether rel is inside a partial_dirs entry.
+// Returns (inPartial, include):
+//   - inPartial=false → path is not governed by partial_dirs at all
+//   - inPartial=true, include=true  → copy/overwrite this file (or allow dir traversal)
+//   - inPartial=true, include=false → skip this file
+func inPartialDir(rel string, isDir bool, config *ExclusionConfig) (inPartial bool, include bool) {
+	parts := strings.SplitN(rel, string(filepath.Separator), 2)
+	if len(parts) < 2 {
+		// Top-level entry (the partial dir root itself) — not governed at file level
+		return false, false
+	}
+	pd, ok := config.PartialDirs[parts[0]]
+	if !ok {
+		return false, false
+	}
+	if isDir {
+		return true, false // subdirs inside partial dirs are always skipped
+	}
+	relWithin := parts[1]
+	for _, pattern := range pd.Include {
+		if matched, _ := filepath.Match(pattern, relWithin); matched {
+			return true, true
+		}
+		if matched, _ := filepath.Match(pattern, filepath.Base(relWithin)); matched {
+			return true, true
+		}
+	}
+	return true, false
 }
 
 // shouldExclude checks if a file or directory should be excluded based on patterns
@@ -84,7 +122,9 @@ func shouldExclude(path string, isDir bool, config *ExclusionConfig) bool {
 func replaceProjectName(data []byte, filename string, projectName string) []byte {
 	// Files that should have "krangka" replaced with project name
 	targetFiles := []string{
-		"development.yaml",
+		"configs/files/example.yaml",
+		"development_main.yaml",
+		"development_kafka.yaml",
 		"docker-compose.yml",
 		"docker-compose.yaml",
 		"deployment.yaml",
@@ -96,7 +136,7 @@ func replaceProjectName(data []byte, filename string, projectName string) []byte
 	baseName := filepath.Base(filename)
 	shouldReplace := false
 	for _, target := range targetFiles {
-		if baseName == target {
+		if baseName == target || filename == target {
 			shouldReplace = true
 			break
 		}
@@ -268,11 +308,18 @@ func loadExclusionConfig() *ExclusionConfig {
 			".DS_Store",
 			"Thumbs.db",
 			"internal/core/domain/note.go",
-			"internal/core/domain/todo.go",
 		},
 		CodeBlocks: []string{
 			"exclude-start",
 			"exclude-end",
+		},
+		CurrentDirSkipDirs: []string{
+			".cursor",
+			".agent",
+			".claude",
+		},
+		PartialDirs: map[string]PartialDir{
+			"openspec": {Include: []string{"config.yaml"}},
 		},
 	}
 
@@ -367,6 +414,53 @@ func initNew(cmd *cobra.Command, args []string) error {
 	// Load exclusion configuration
 	exclusionConfig := loadExclusionConfig()
 
+	// Build lookup set from configurable current_dir_skip_dirs.
+	currentDirSkipDirs := make(map[string]bool, len(exclusionConfig.CurrentDirSkipDirs))
+	for _, d := range exclusionConfig.CurrentDirSkipDirs {
+		currentDirSkipDirs[d] = true
+	}
+
+	// When using current directory, check for conflicting files before writing anything.
+	if dir == "." {
+		var conflicts []string
+		filepath.WalkDir(info.Dir, func(src string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return nil
+			}
+			rel, err := filepath.Rel(info.Dir, src)
+			if err != nil {
+				return nil
+			}
+			if d.IsDir() {
+				if currentDirSkipDirs[rel] {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+			if shouldExclude(rel, false, exclusionConfig) {
+				return nil
+			}
+			// Also skip files whose top-level directory is in the skip set.
+			if currentDirSkipDirs[strings.SplitN(rel, string(filepath.Separator), 2)[0]] {
+				return nil
+			}
+			// Partial-dir files are always overwritten — not a conflict.
+			if inPD, include := inPartialDir(rel, false, exclusionConfig); inPD {
+				if !include {
+					return nil // non-included file in partial dir → skip entirely
+				}
+				return nil // included file → will be overwritten, not a conflict
+			}
+			if _, statErr := os.Stat(filepath.Join(dir, rel)); statErr == nil {
+				conflicts = append(conflicts, rel)
+			}
+			return nil
+		})
+		if len(conflicts) > 0 {
+			return fmt.Errorf("cannot initialize in current directory: conflicting files exist:\n  %s", strings.Join(conflicts, "\n  "))
+		}
+	}
+
 	// Copy from module cache into new directory, making edits as needed.
 	filepath.WalkDir(info.Dir, func(src string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -375,6 +469,22 @@ func initNew(cmd *cobra.Command, args []string) error {
 		rel, err := filepath.Rel(info.Dir, src)
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		// When initializing in current directory, skip tool-config dirs entirely.
+		if dir == "." && d.IsDir() && currentDirSkipDirs[rel] {
+			return filepath.SkipDir
+		}
+
+		// Handle partial dirs: only copy files matching the include list.
+		if inPD, include := inPartialDir(rel, d.IsDir(), exclusionConfig); inPD {
+			if d.IsDir() {
+				return filepath.SkipDir // skip subdirectories inside partial dirs
+			}
+			if !include {
+				return nil // skip non-included files in partial dirs
+			}
+			// included files fall through to normal copy logic below
 		}
 
 		// Check if this file/directory should be excluded
