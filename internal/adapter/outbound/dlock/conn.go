@@ -1,52 +1,56 @@
 package dlock
 
 import (
-	"fmt"
-	"strings"
+	"context"
 
-	"github.com/redhajuanda/komon/lock"
-	_ "github.com/redhajuanda/komon/lock/redis"
+	"github.com/redhajuanda/komon/common"
+	komondlock "github.com/redhajuanda/komon/dlock"
 	"github.com/redhajuanda/komon/logger"
+	"github.com/redhajuanda/krangka/internal/core/port/outbound"
 )
 
-// DLock is a wrapper around the DLock connection
-type DLock struct {
-	lock.DLocker
+// Dlock wraps the komon Redis-backed distributed locker.
+type Dlock struct {
+	komondlock.DLocker
 }
 
+var _ outbound.DLocker = (*Dlock)(nil)
+
+// Param configures the Redis backing store for the lock.
 type Param struct {
-	Sentinel     bool
-	MasterName   string
-	Username     string
-	Password     string
-	Hosts        []string
-	DB           int
-	MinIdleConns int
-	PoolSize     int
+	Sentinel                   bool
+	MasterName                 string
+	Username                   string
+	Password                   string
+	Hosts                      []string
+	DB                         int
+	MinIdleConns               int
+	PoolSize                   int
+	SentinelMasterDialOverride string
 }
 
-// New creates a new distributed lock connection
-// Example: redis://<user>:<pass>@localhost:6379/<db>?minIdleConns=<minIdleConns>&poolSize=<poolSize>
-// Example: redis-sentinel://<user>:<pass>@localhost:26379/<db>?master=mymaster&minIdleConns=<minIdleConns>&poolSize=<poolSize>
-func New(param Param, log logger.Logger) *DLock {
-
-	protocol := "redis"
-	if param.Sentinel {
-		protocol = "redis-sentinel"
+// NewDlock builds a Redis-backed Dlock from application config.
+func NewDlock(param Param, log logger.Logger) *Dlock {
+	ctx := context.Background()
+	opt := komondlock.RedisOption{
+		RedisOption: common.RedisOption{
+			Sentinel:                   param.Sentinel,
+			MasterName:                 param.MasterName,
+			Username:                   param.Username,
+			Password:                   param.Password,
+			Hosts:                      param.Hosts,
+			DB:                         param.DB,
+			PoolSize:                   param.PoolSize,
+			MinIdleCon:                 param.MinIdleConns,
+			SentinelMasterDialOverride: param.SentinelMasterDialOverride,
+		},
 	}
-	url := fmt.Sprintf("%s://:%s@%s?db=%d&prefix=&minIdleConns=%d&poolSize=%d", protocol, param.Password, strings.Join(param.Hosts, ","), param.DB, param.MinIdleConns, param.PoolSize)
-
-	dLock, err := lock.New(url)
+	inner, err := komondlock.NewRedis(ctx, opt)
 	if err != nil {
 		log.Fatalf("failed to create dlock: %v", err)
 	}
-	return &DLock{
-		DLocker: dLock,
-	}
 
-}
+	log.Info("dlock initialized successfully")
 
-// Close closes the DLock connection
-func (d *DLock) Close() error {
-	return d.DLocker.Close()
+	return &Dlock{DLocker: inner}
 }

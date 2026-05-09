@@ -1,24 +1,41 @@
 schema: spec-driven
 
-# Project context for Krangka - Hexagonal Architecture Go Application
+# Sources of truth — read in order. Do NOT duplicate their content here.
 context: |
-  Use **krangka-related skills only** for architecture, conventions, and implementation guidance. Do not duplicate or explain that content here.
-  - **krangka-expert**: Architecture, adding features, errors, repos, pagination, outbox, bootstrap, workers, subscribers, dlock, logger, testing, code style. Read the skill and its references as needed.
-  - **krangka-install**: Installing CLI, creating a new project, config, Docker, migrate, running http/subscriber/worker. Use when setting up a new Krangka project.
-  - **krangka-upgrade**: Upgrading the framework from current version to latest. Use when upgrading krangka version.
-  - **krangka-query-review**: Generating query review documents from Sikat RunRaw/Run usage. Use when reviewing or documenting SQL queries.
-  If a skill conflicts with the user request, ask for clarification.
+  1. **`AGENTS.md`** (project root):
+     - **Krangka Hard Rules** — refusal-grade. Re-check whenever proposing or writing
+       code that touches schema, errors, transactions, repositories, or `RunRaw`.
+     - **Krangka Conventions** — style and organization. Read when writing or editing code.
+  2. **Skill `krangka-expert`** — architecture, layering, errors, repos, pagination,
+     outbox, bootstrap, wiring, workers, subscribers, dlock, logger, testing,
+     code-style, engineering-principles. Use its SKILL.md trigger table to load
+     **only** the reference that matches the current step. Don't pre-load them all.
 
-# Per-artifact rules
+  Precedence (highest first):
+    1. AGENTS.md Hard Rules
+    2. AGENTS.md Conventions
+    3. krangka-expert references
+    4. general guidance
+
+  Reference, don't restate: cite by section/file (e.g. "see krangka-expert/error-handling");
+  never inline their content into proposals, specs, or tasks.
+
+  If skill guidance conflicts with the user's request, ask before proceeding.
+
+# Per-artifact rules — additions on top of the sources above
 rules:
   proposal:
-    - Use skill **krangka-expert** for architecture, layers, DDD, and acceptance criteria.
-    - Keep proposals under 1000 words; include Goals and Non-goals; use ubiquitous language.
-  
+    - "Load: `krangka-expert/engineering-principles`, `krangka-expert/hexagonal-architecture`."
+    - "Under 1000 words. Required sections: **Goals**, **Non-goals**, **Acceptance criteria**. Use domain ubiquitous language."
+    - "State what is *not* changing; refuse speculative scope."
+
   spec:
-    - Use skill **krangka-expert** (error-handling, code style) for error formats and DTOs.
-    - OpenAPI 3.0; RESTful; document request/response and error responses; auth if applicable.
-  
+    - "Load: `krangka-expert/error-handling` for error responses; `krangka-expert/pagination` for list endpoints."
+    - "OpenAPI 3.0, RESTful. Document request/response/error shapes; reuse `fail.Failure` codes from `shared/failure/failure.go`. Include auth if applicable."
+    - "DTOs follow `krangka-expert/code-style`."
+
   tasks:
-    - Use skill **krangka-expert** for file locations, TDD order, review gate, and layer breakdown.
-    - Follow canonical feature order and references from krangka-expert (adding-features, repository, workers, bootstrap, testing).
+    - "Load `krangka-expert/adding-features` for the canonical end-to-end order (migration → domain → port → service → repo → handler → tests → bootstrap wiring); pull layer-specific references (`repository`, `workers`, etc.) just-in-time."
+    - "TDD order per `krangka-expert/testing` (failing test → implement → green)."
+    - "One task per layer/file change. Mark inter-task dependencies."
+    - "Every task must satisfy AGENTS.md *Per-layer error handling* and the table-driven test rule."

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/redhajuanda/komon/logger"
-
 	"github.com/redhajuanda/qwery"
 
 	_ "github.com/go-sql-driver/mysql" // MySQL driver

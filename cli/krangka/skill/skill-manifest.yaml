@@ -1,0 +1,27 @@
+version: 1
+
+# Paths owned by the krangka template. `krangka skill upgrade` will replace
+# everything listed here with the contents of the target version.
+paths:
+  dirs:
+    - .claude
+    - .cursor
+    - .kiro
+    - .agents
+    - .rtk
+    - .krangka/docs
+  files:
+    - AGENTS.md
+    - CLAUDE.md
+    - GEMINI.md
+    - .cursorrules
+    - .windsurfrules
+    - .mcp.json
+    - .opencode.json
+    - .krangka/README.md
+
+# Paths under the dirs above that should NOT be replaced (user-owned or
+# locally generated). Literal paths only — no globs in v1.
+exclude:
+  - .claude/settings.local.json
+  - .krangka/.VERSION

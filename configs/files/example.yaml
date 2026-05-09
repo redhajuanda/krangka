@@ -28,6 +28,8 @@ http:
   enable_print_routes: true
   # Disable startup message
   disable_startup_message: false
+  # Allowed origins for CORS
+  allowed_origins: ["*"]
 # Database configuration
 database:
   # MariaDB main configuration
@@ -97,11 +99,7 @@ otel:
   # OpenTelemetry exporter
   exporter: jaeger
   # OpenTelemetry sample rate
-  sample_rate: 1
-# Roles configuration
-roles:
-  # Superadmin role
-  superadmin: 1
+  sample_rate: 0.001
 # Event configuration
 event:
   # Outbox configuration
@@ -120,7 +118,7 @@ event:
   kafka:
     # Kafka publisher configuration
     publisher:
-      # Enable Kafka publisher (required if using outbox with Kafka)
+      # Enabled
       enabled: false
       # Kafka brokers
       brokers: ["localhost:9092"]
@@ -144,7 +142,7 @@ event:
   redisstream:
     # Redis stream publisher configuration
     publisher:
-      # Enable Redis stream publisher (default is true)
+      # Enabled
       enabled: true
       # Default maximum length of the redis stream
       default_maxlen: 10000
@@ -154,4 +152,3 @@ event:
       - id: general
         # When empty, fan-out mode will be used.
         consumer_group: general
-      

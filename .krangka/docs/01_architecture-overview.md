@@ -131,12 +131,16 @@ Define contracts for external systems your application depends on.
 ```go
 // Example: Repository interface
 type Repository interface {
-    DoInTransaction(ctx context.Context, fn func(ctx context.Context) error) (any, error)
+    DoInTransaction(ctx context.Context, fn func(repo Repository) (any, error)) (any, error)
     GetNoteRepository() repositories.Note
 }
 
-// Example: Cache interface
-type Cache cache.Cache
+// Example: Cache interface (simplified)
+type Cache interface {
+    Get(ctx context.Context, key string, dest any, opts ...CacheOption) error
+    Set(ctx context.Context, key string, value any, opts ...CacheOption) error
+    Del(ctx context.Context, keys ...string) error
+}
 ```
 
 ## Dependency Flow
@@ -159,7 +163,8 @@ External Systems → Inbound Adapters → Inbound Ports → Services → Outboun
 - **Architecture**: Hexagonal Architecture (Ports & Adapters)
 - **Dependency Injection**: Manual wiring through bootstrap pattern
 - **HTTP Framework**: Fiber
-- **Database**: MariaDB/PostgreSQL with Sikat ORM (inline SQL queries)
+- **Database**: MariaDB/PostgreSQL with Qwery ORM (inline SQL queries)
+- **Warehouse**: Snowflake adapter via outbound warehouse port
 - **Cache**: Redis
 - **Logging**: Structured logging with `github.com/redhajuanda/komon/logger`
 - **Tracing**: Distributed tracing with `github.com/redhajuanda/komon/tracer`
@@ -278,9 +283,9 @@ type Note struct {
 ✅ **Do**: Keep domain entities pure
 ```go
 type Note struct {
-    ID        string    `sikat:"id"`
-    Title     string    `sikat:"title"`
-    CreatedAt time.Time `sikat:"created_at"`
+    ID        string    `qwery:"id"`
+    Title     string    `qwery:"title"`
+    CreatedAt time.Time `qwery:"created_at"`
 }
 ```
 
@@ -354,7 +359,7 @@ type Dependency struct {
     serviceNote  Resource[*note.Service]
     httpHandlers Resource[[]http.Handler]
     
-    sikatMain    ResourceClosable[*mariadb.Sikat]
+    qweryMain    ResourceClosable[*mariadb.Qwery]
     redis        ResourceClosable[*redis.Redis]
     http         ResourceRunnable[*http.HTTP]
     migrate      ResourceExecutable[*migrate.Migrate]

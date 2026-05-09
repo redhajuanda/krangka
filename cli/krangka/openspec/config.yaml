@@ -1,0 +1,46 @@
+schema: spec-driven
+
+# CLI codebase context — different goals than the main Krangka app
+# The CLI is a developer tool for scaffolding and code generation; it does not run HTTP, workers, or subscribers.
+context: |
+  # Purpose
+  - **Krangka CLI** (`cli/krangka/`): standalone Go tool for creating new Krangka projects and generating code. It is a separate Go module from the main app.
+  - Goals: (1) scaffold a new project from the Krangka boilerplate with exclusions and rewrites, (2) provide code-generation commands (e.g. service scaffolding). It does not implement hexagonal architecture, domain, or adapters; it operates on the filesystem and Go source.
+  
+  # Structure
+  - **root.go**: Cobra root command `krangka`; assembles subcommands from packages (e.g. gonew.Commands()). Add new top-level commands by implementing a package that returns []*cobra.Command and appending in main().
+  - **gonew/**: Project scaffolding. Entry: `new` command. Uses `go mod download` to fetch the source module, then walks the cached dir and copies files into the target directory with exclusions and rewrites.
+  - **generator/**: Code generation (e.g. `gen service`). Uses Bubble Tea for TUI when needed; creates dirs/files under the current working directory (e.g. internal/core/service/<name>/service.go). Reads port/outbound/registry.go to discover interfaces for selection.
+  - **utils/stringx**: Buffered position-based editing of byte slices (Buffer, Replace, Insert). Used by gonew for rewriting Go source (import paths, package names) without full AST rewriting.
+  - **openspec/**: This directory; OpenSpec config for CLI-specific change workflows only.
+  
+  # Gonew behavior
+  - **Exclusions**: `exclude-config.json` (embedded via go:embed). Three kinds: `directories` (glob, skip entire tree), `files` (glob, skip file), `code_blocks` (markers "exclude-start" / "exclude-end" to strip line ranges from file content). Config can be overridden by a local `exclude-config.json` in CWD when running the CLI.
+  - **Copy flow**: Walk source module cache → for each file: apply code-block stripping → replace project name in specific deployment/Makefile files → for .go: FixGo (package name + import path srcMod→dstMod) and for main.go Swagger comments; for go.mod: fixGoMod (module path).
+  - **Post-processing**: moveToKrangkaFolder: move README.md and docs/ into .krangka/, write a new root README.md with project name.
+  - **Project name**: Derived from the target directory name (or CWD when target is "."). Replaced in deployment YAMLs, Makefile (BINARY=), and main.go Swagger @title, @description, @BasePath.
+  
+  # Conventions
+  - Commands live in subpackages and expose `Commands() []*cobra.Command`. Root only composes them.
+  - No dependency on main app internal/ or bootstrap. CLI has its own go.mod.
+  - Error handling: log.Fatal for unrecoverable errors during scaffold; return error from RunE where appropriate.
+  - Generator runs in CWD and expects to find/maintain main-app layout (e.g. internal/core/port/outbound/registry.go) when generating services.
+  
+  # Out of scope for this config
+  - Main Krangka application (cmd/, internal/, hexagonal architecture, TDD for app features). Use the repo root openspec/ for app-level changes.
+
+# Per-artifact rules
+rules:
+  proposal:
+    - Keep proposals under 1000 words; include Goals and Non-goals.
+    - For new CLI commands: describe UX, flags, args, and how they interact with gonew or generator (e.g. new flags for `new`, new subcommands under `gen`).
+    - For template/exclusion changes: describe impact on generated projects and what gets copied or stripped.
+  
+  spec:
+    - For CLI commands: document flags, args, exit codes, and stdout/stderr behavior.
+    - For exclude-config or other JSON config: document schema (fields, glob semantics) and when embedded vs local file is used.
+  
+  tasks:
+    - Implement in the appropriate package (gonew vs generator vs new package); wire new commands in root.go.
+    - For gonew: respect ExclusionConfig, load order (embedded then local), and post-processing order (copy → replace → moveToKrangkaFolder).
+    - Use table-driven tests for multi-scenario logic; keep CLI tests focused on behavior, not main-app layers.

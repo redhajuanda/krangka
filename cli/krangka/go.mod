@@ -1,6 +1,6 @@
 module github.com/redhajuanda/krangka/cli/krangka
 
-go 1.24.2
+go 1.25.0
 
 require (
 	github.com/charmbracelet/bubbletea v1.3.6
@@ -8,6 +8,7 @@ require (
 	github.com/spf13/cobra v1.9.1
 	golang.org/x/mod v0.26.0
 	golang.org/x/text v0.26.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (

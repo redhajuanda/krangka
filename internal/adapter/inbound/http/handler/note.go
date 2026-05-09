@@ -31,7 +31,7 @@ func NewNoteHandler(cfg *configs.Config, log logger.Logger, svc inbound.Note) *N
 }
 
 // RegisterRoutes registers the HTTP routes for the NoteHandler.
-func (h *NoteHandler) RegisterRoutes(app fiber.Router) {
+func (h *NoteHandler) RegisterRoutes(app *fiber.App) {
 
 	app.Get("/notes/:id", h.GetNoteByID)
 	app.Post("/notes", h.CreateNote)

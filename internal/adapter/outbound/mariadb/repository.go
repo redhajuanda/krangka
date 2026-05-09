@@ -80,7 +80,7 @@ func (r *mariaDBRepository) DoInTransaction(ctx context.Context, fn func(repo ou
 			}
 
 			// publish the outbox entries to the target publisher
-			registry.outbox.qwery = r.qweryTx
+			registry.outbox.qwery = r.qwery
 			registry.outbox.PublishBuffered(ctx)
 		}()
 

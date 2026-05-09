@@ -16,7 +16,6 @@ type Config struct {
 	Database Database `yaml:"database"`
 	Cache    Cache    `yaml:"cache"`
 	Otel     Otel     `yaml:"otel"`
-	Roles    Roles    `yaml:"roles"`
 	Event    Event    `yaml:"event"`
 }
 
@@ -39,6 +38,7 @@ type Http struct {
 	StopTimeout           time.Duration `yaml:"stop_timeout"`
 	EnablePrintRoutes     bool          `yaml:"enable_print_routes"`
 	DisableStartupMessage bool          `yaml:"disable_startup_message"`
+	AllowOrigins          []string      `yaml:"allow_origins"`
 }
 
 type Database struct {
@@ -77,9 +77,6 @@ type Cache struct {
 		PoolSize     int      `yaml:"pool_size"`
 		MinIdleConns int      `yaml:"min_idle_conns"`
 	} `yaml:"redis"`
-}
-type Roles struct {
-	Superadmin string `yaml:"superadmin"`
 }
 
 type Otel struct {

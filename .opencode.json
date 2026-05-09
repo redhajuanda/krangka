@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "code-review-graph": {
+      "command": "code-review-graph",
+      "args": [
+        "serve"
+      ],
+      "type": "stdio",
+      "env": []
+    },
+    "clickup": {
+      "url": "https://mcp.clickup.com/mcp"
+    }
+  }
+}

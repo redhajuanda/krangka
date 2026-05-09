@@ -12,9 +12,17 @@ cli/krangka/krangka
 prompt
 testing/
 
+# macOS Finder metadata files (any directory depth)
 .DS_Store
+**/.DS_Store
 
 coverage.out
 
 # Ignore all files in the "vendor" directory
 vendor/**
+
+CHANGES.md
+
+project
+# Added by code-review-graph
+.code-review-graph/

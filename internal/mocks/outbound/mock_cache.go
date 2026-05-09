@@ -12,9 +12,8 @@ package mocks_outbound
 import (
 	context "context"
 	reflect "reflect"
-	time "time"
 
-	cache "github.com/redhajuanda/komon/cache"
+	outbound "github.com/redhajuanda/krangka/internal/core/port/outbound"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -56,67 +55,76 @@ func (mr *MockCacheMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockCache)(nil).Close))
 }
 
-// Delete mocks base method.
-func (m *MockCache) Delete(ctx context.Context, key string, opts ...cache.DeleteOptions) error {
+// Del mocks base method.
+func (m *MockCache) Del(ctx context.Context, keys ...string) error {
 	m.ctrl.T.Helper()
-	varargs := []any{ctx, key}
-	for _, a := range opts {
+	varargs := []any{ctx}
+	for _, a := range keys {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "Delete", varargs...)
+	ret := m.ctrl.Call(m, "Del", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Delete indicates an expected call of Delete.
-func (mr *MockCacheMockRecorder) Delete(ctx, key any, opts ...any) *gomock.Call {
+// Del indicates an expected call of Del.
+func (mr *MockCacheMockRecorder) Del(ctx any, keys ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{ctx, key}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockCache)(nil).Delete), varargs...)
+	varargs := append([]any{ctx}, keys...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Del", reflect.TypeOf((*MockCache)(nil).Del), varargs...)
 }
 
-// Exist mocks base method.
-func (m *MockCache) Exist(ctx context.Context, key string) bool {
+// DeleteWithPattern mocks base method.
+func (m *MockCache) DeleteWithPattern(ctx context.Context, pattern string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Exist", ctx, key)
-	ret0, _ := ret[0].(bool)
+	ret := m.ctrl.Call(m, "DeleteWithPattern", ctx, pattern)
+	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Exist indicates an expected call of Exist.
-func (mr *MockCacheMockRecorder) Exist(ctx, key any) *gomock.Call {
+// DeleteWithPattern indicates an expected call of DeleteWithPattern.
+func (mr *MockCacheMockRecorder) DeleteWithPattern(ctx, pattern any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exist", reflect.TypeOf((*MockCache)(nil).Exist), ctx, key)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteWithPattern", reflect.TypeOf((*MockCache)(nil).DeleteWithPattern), ctx, pattern)
+}
+
+// Exists mocks base method.
+func (m *MockCache) Exists(ctx context.Context, keys ...string) (bool, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx}
+	for _, a := range keys {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Exists", varargs...)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Exists indicates an expected call of Exists.
+func (mr *MockCacheMockRecorder) Exists(ctx any, keys ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx}, keys...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exists", reflect.TypeOf((*MockCache)(nil).Exists), varargs...)
 }
 
 // Get mocks base method.
-func (m *MockCache) Get(ctx context.Context, key string) ([]byte, error) {
+func (m *MockCache) Get(ctx context.Context, key string, dest any, opts ...outbound.CacheOption) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", ctx, key)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	varargs := []any{ctx, key, dest}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Get", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockCacheMockRecorder) Get(ctx, key any) *gomock.Call {
+func (mr *MockCacheMockRecorder) Get(ctx, key, dest any, opts ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockCache)(nil).Get), ctx, key)
-}
-
-// GetFloat mocks base method.
-func (m *MockCache) GetFloat(ctx context.Context, key string) (float64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFloat", ctx, key)
-	ret0, _ := ret[0].(float64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetFloat indicates an expected call of GetFloat.
-func (mr *MockCacheMockRecorder) GetFloat(ctx, key any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFloat", reflect.TypeOf((*MockCache)(nil).GetFloat), ctx, key)
+	varargs := append([]any{ctx, key, dest}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockCache)(nil).Get), varargs...)
 }
 
 // GetInt mocks base method.
@@ -134,32 +142,24 @@ func (mr *MockCacheMockRecorder) GetInt(ctx, key any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInt", reflect.TypeOf((*MockCache)(nil).GetInt), ctx, key)
 }
 
-// GetKeys mocks base method.
-func (m *MockCache) GetKeys(ctx context.Context, pattern string) []string {
+// GetMember mocks base method.
+func (m *MockCache) GetMember(ctx context.Context, key string, dest any, opts ...outbound.CacheOption) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetKeys", ctx, pattern)
-	ret0, _ := ret[0].([]string)
-	return ret0
+	varargs := []any{ctx, key, dest}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetMember", varargs...)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// GetKeys indicates an expected call of GetKeys.
-func (mr *MockCacheMockRecorder) GetKeys(ctx, pattern any) *gomock.Call {
+// GetMember indicates an expected call of GetMember.
+func (mr *MockCacheMockRecorder) GetMember(ctx, key, dest any, opts ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeys", reflect.TypeOf((*MockCache)(nil).GetKeys), ctx, pattern)
-}
-
-// GetObject mocks base method.
-func (m *MockCache) GetObject(ctx context.Context, key string, doc any) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetObject", ctx, key, doc)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// GetObject indicates an expected call of GetObject.
-func (mr *MockCacheMockRecorder) GetObject(ctx, key, doc any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetObject", reflect.TypeOf((*MockCache)(nil).GetObject), ctx, key, doc)
+	varargs := append([]any{ctx, key, dest}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMember", reflect.TypeOf((*MockCache)(nil).GetMember), varargs...)
 }
 
 // GetString mocks base method.
@@ -177,45 +177,233 @@ func (mr *MockCacheMockRecorder) GetString(ctx, key any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetString", reflect.TypeOf((*MockCache)(nil).GetString), ctx, key)
 }
 
-// Increment mocks base method.
-func (m *MockCache) Increment(ctx context.Context, key string, expiration time.Duration) (int64, error) {
+// HGet mocks base method.
+func (m *MockCache) HGet(ctx context.Context, key, field string, dest any, opts ...outbound.CacheOption) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Increment", ctx, key, expiration)
+	varargs := []any{ctx, key, field, dest}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "HGet", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// HGet indicates an expected call of HGet.
+func (mr *MockCacheMockRecorder) HGet(ctx, key, field, dest any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, key, field, dest}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HGet", reflect.TypeOf((*MockCache)(nil).HGet), varargs...)
+}
+
+// HGetAll mocks base method.
+func (m *MockCache) HGetAll(ctx context.Context, key string, dest any, opts ...outbound.CacheOption) error {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, key, dest}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "HGetAll", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// HGetAll indicates an expected call of HGetAll.
+func (mr *MockCacheMockRecorder) HGetAll(ctx, key, dest any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, key, dest}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HGetAll", reflect.TypeOf((*MockCache)(nil).HGetAll), varargs...)
+}
+
+// HMGetPipelined mocks base method.
+func (m *MockCache) HMGetPipelined(ctx context.Context, requests map[string]string, opts ...outbound.CacheOption) (map[string][]byte, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, requests}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "HMGetPipelined", varargs...)
+	ret0, _ := ret[0].(map[string][]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HMGetPipelined indicates an expected call of HMGetPipelined.
+func (mr *MockCacheMockRecorder) HMGetPipelined(ctx, requests any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, requests}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HMGetPipelined", reflect.TypeOf((*MockCache)(nil).HMGetPipelined), varargs...)
+}
+
+// HMSetPipelined mocks base method.
+func (m *MockCache) HMSetPipelined(ctx context.Context, writes map[string][]*outbound.CacheDataSet, opts ...outbound.CacheOption) error {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, writes}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "HMSetPipelined", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// HMSetPipelined indicates an expected call of HMSetPipelined.
+func (mr *MockCacheMockRecorder) HMSetPipelined(ctx, writes any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, writes}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HMSetPipelined", reflect.TypeOf((*MockCache)(nil).HMSetPipelined), varargs...)
+}
+
+// HSet mocks base method.
+func (m *MockCache) HSet(ctx context.Context, key string, data []*outbound.CacheDataSet, opts ...outbound.CacheOption) error {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, key, data}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "HSet", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// HSet indicates an expected call of HSet.
+func (mr *MockCacheMockRecorder) HSet(ctx, key, data any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, key, data}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HSet", reflect.TypeOf((*MockCache)(nil).HSet), varargs...)
+}
+
+// Increment mocks base method.
+func (m *MockCache) Increment(ctx context.Context, key string, opts ...outbound.CacheOption) (int64, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, key}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Increment", varargs...)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Increment indicates an expected call of Increment.
-func (mr *MockCacheMockRecorder) Increment(ctx, key, expiration any) *gomock.Call {
+func (mr *MockCacheMockRecorder) Increment(ctx, key any, opts ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Increment", reflect.TypeOf((*MockCache)(nil).Increment), ctx, key, expiration)
+	varargs := append([]any{ctx, key}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Increment", reflect.TypeOf((*MockCache)(nil).Increment), varargs...)
 }
 
-// RemainingTime mocks base method.
-func (m *MockCache) RemainingTime(ctx context.Context, key string) int {
+// IncrementFixed mocks base method.
+func (m *MockCache) IncrementFixed(ctx context.Context, key string, opts ...outbound.CacheOption) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RemainingTime", ctx, key)
-	ret0, _ := ret[0].(int)
+	varargs := []any{ctx, key}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "IncrementFixed", varargs...)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IncrementFixed indicates an expected call of IncrementFixed.
+func (mr *MockCacheMockRecorder) IncrementFixed(ctx, key any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, key}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncrementFixed", reflect.TypeOf((*MockCache)(nil).IncrementFixed), varargs...)
+}
+
+// MGet mocks base method.
+func (m *MockCache) MGet(ctx context.Context, keys []string, dest any, opts ...outbound.CacheOption) error {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, keys, dest}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "MGet", varargs...)
+	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// RemainingTime indicates an expected call of RemainingTime.
-func (mr *MockCacheMockRecorder) RemainingTime(ctx, key any) *gomock.Call {
+// MGet indicates an expected call of MGet.
+func (mr *MockCacheMockRecorder) MGet(ctx, keys, dest any, opts ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemainingTime", reflect.TypeOf((*MockCache)(nil).RemainingTime), ctx, key)
+	varargs := append([]any{ctx, keys, dest}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MGet", reflect.TypeOf((*MockCache)(nil).MGet), varargs...)
 }
 
 // Set mocks base method.
-func (m *MockCache) Set(ctx context.Context, key string, value any, expiration time.Duration) error {
+func (m *MockCache) Set(ctx context.Context, key string, value any, opts ...outbound.CacheOption) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Set", ctx, key, value, expiration)
+	varargs := []any{ctx, key, value}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Set", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Set indicates an expected call of Set.
-func (mr *MockCacheMockRecorder) Set(ctx, key, value, expiration any) *gomock.Call {
+func (mr *MockCacheMockRecorder) Set(ctx, key, value any, opts ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockCache)(nil).Set), ctx, key, value, expiration)
+	varargs := append([]any{ctx, key, value}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockCache)(nil).Set), varargs...)
+}
+
+// SetMember mocks base method.
+func (m *MockCache) SetMember(ctx context.Context, key string, data []*outbound.CacheDataSet, opts ...outbound.CacheOption) error {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, key, data}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SetMember", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetMember indicates an expected call of SetMember.
+func (mr *MockCacheMockRecorder) SetMember(ctx, key, data any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, key, data}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetMember", reflect.TypeOf((*MockCache)(nil).SetMember), varargs...)
+}
+
+// SetMultiple mocks base method.
+func (m *MockCache) SetMultiple(ctx context.Context, data []*outbound.CacheDataSet, opts ...outbound.CacheOption) error {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, data}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SetMultiple", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetMultiple indicates an expected call of SetMultiple.
+func (mr *MockCacheMockRecorder) SetMultiple(ctx, data any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, data}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetMultiple", reflect.TypeOf((*MockCache)(nil).SetMultiple), varargs...)
+}
+
+// UnmarshalValue mocks base method.
+func (m *MockCache) UnmarshalValue(raw []byte, dest any, opts ...outbound.CacheOption) error {
+	m.ctrl.T.Helper()
+	varargs := []any{raw, dest}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UnmarshalValue", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UnmarshalValue indicates an expected call of UnmarshalValue.
+func (mr *MockCacheMockRecorder) UnmarshalValue(raw, dest any, opts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{raw, dest}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnmarshalValue", reflect.TypeOf((*MockCache)(nil).UnmarshalValue), varargs...)
 }

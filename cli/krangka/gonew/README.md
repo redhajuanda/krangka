@@ -33,15 +33,15 @@ krangka new <package-name> [project-name] [options]
 
 ```bash
 # Basic usage
-krangka new github.com/mycompany/myapp myapp
+krangka new github.com/redhajuanda/myapp myapp
 
 # With custom source module
-krangka new github.com/mycompany/myapp myapp -m github.com/mycompany/krangka
+krangka new github.com/redhajuanda/myapp myapp -m github.com/redhajuanda/krangka
 ```
 
 ## Options
 
-- `-m, --source-mod`: Source module to use as boilerplate (default: github.com/mycompany/krangka)
+- `-m, --source-mod`: Source module to use as boilerplate (default: github.com/redhajuanda/krangka)
 
 ## Exclusion Configuration
 
@@ -149,7 +149,7 @@ This will:
 ### Example 2: Custom Source Module
 
 ```bash
-krangka new github.com/mycompany/myapp myapp -m github.com/mycompany/krangka
+krangka new github.com/mycompany/myapp myapp -m github.com/redhajuanda/krangka
 ```
 
 This uses a custom source module while still applying the same exclusions.

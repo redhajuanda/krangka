@@ -5,6 +5,8 @@ import (
 
 	"github.com/redhajuanda/krangka/internal/adapter/inbound/http/docs"
 	"github.com/redhajuanda/krangka/internal/adapter/inbound/http/middleware"
+	"github.com/redhajuanda/krangka/internal/adapter/inbound/http/response"
+	"github.com/redhajuanda/krangka/shared/failure"
 
 	"github.com/gofiber/contrib/v3/swaggo"
 	"github.com/gofiber/fiber/v3"
@@ -17,13 +19,16 @@ import (
 // RegisterRoutes registers the routes for the HTTP server
 func (h *HTTP) RegisterRoutes() {
 
+	h.router.Use(middleware.CORS(h.cfg.Http.AllowOrigins))
 	h.router.Use(middleware.SecurityHeader())
 	h.router.Use(middleware.RequestIDMiddleware())
 	h.router.Use(middleware.RecoverMiddleware())
+	h.router.Use(middleware.LoggerMiddleware(h.log))
 
 	for _, handler := range h.handlers {
 		handler.RegisterRoutes(h.router)
 	}
+
 }
 
 // RegisterSwaggerRoutes registers the swagger routes for the HTTP server
@@ -69,9 +74,16 @@ func (h *HTTP) customSwaggerSpec(c fiber.Ctx) error {
 func (h *HTTP) RegisterHealthCheckRoutes() {
 
 	h.router.Get("/health", func(c fiber.Ctx) error {
-		return c.SendStatus(fiber.StatusOK)
+		return response.SuccessOK(c, "OK")
 	})
 
+}
+
+// RegisterPingRoutes registers the ping routes for the HTTP server
+func (h *HTTP) RegisterPingRoutes() {
+	h.router.Get("/ping", func(c fiber.Ctx) error {
+		return response.SuccessOK(c, "Pong")
+	})
 }
 
 // RegisterMetricsRoutes registers the metrics routes for the HTTP server
@@ -90,5 +102,12 @@ func (h *HTTP) RegisterMetricsRoutes() {
 		})
 
 		return adaptor.HTTPHandler(handler)(c)
+	})
+}
+
+func (h *HTTP) RegisterNotFoundRoutes() {
+	h.router.Use(func(c fiber.Ctx) error {
+		logRequest(c, h.log, failure.ErrPathNotFound.HTTPStatus, failure.ErrPathNotFound.Message, "")
+		return response.Failed(c, failure.ErrPathNotFound.HTTPStatus, failure.ErrPathNotFound.Code, failure.ErrPathNotFound.Message)
 	})
 }

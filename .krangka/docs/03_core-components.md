@@ -28,17 +28,17 @@ package domain
 import "time"
 
 type Note struct {
-    ID        string    `sikat:"id"`
-    Title     string    `sikat:"title"`
-    Content   string    `sikat:"content"`
-    CreatedAt time.Time `sikat:"created_at"`
-    UpdatedAt time.Time `sikat:"updated_at"`
-    DeletedAt int       `sikat:"deleted_at"`
+    ID        string    `qwery:"id"`
+    Title     string    `qwery:"title"`
+    Content   string    `qwery:"content"`
+    CreatedAt time.Time `qwery:"created_at"`
+    UpdatedAt time.Time `qwery:"updated_at"`
+    DeletedAt int       `qwery:"deleted_at"`
 }
 
 // Filter struct for list operations
 type NoteFilter struct {
-    Search string `sikat:"search"`
+    Search string `qwery:"search"`
 }
 ```
 
@@ -47,7 +47,7 @@ type NoteFilter struct {
 #### 1. Pure Business Logic
 - No external dependencies (no HTTP, database, or framework imports)
 - No JSON tags (use DTOs for serialization)
-- Only use `sikat` tags for database mapping
+- Only use `qwery` tags for database mapping
 
 #### 2. Keep It Simple
 - Domain entities are plain data structs
@@ -85,12 +85,12 @@ All domain entities include a `DeletedAt` field that stores Unix timestamps:
 
 ```go
 type Note struct {
-    ID        string    `sikat:"id"`
-    Title     string    `sikat:"title"`
-    Content   string    `sikat:"content"`
-    CreatedAt time.Time `sikat:"created_at"`
-    UpdatedAt time.Time `sikat:"updated_at"`
-    DeletedAt int       `sikat:"deleted_at"`  // Soft delete field (Unix timestamp)
+    ID        string    `qwery:"id"`
+    Title     string    `qwery:"title"`
+    Content   string    `qwery:"content"`
+    CreatedAt time.Time `qwery:"created_at"`
+    UpdatedAt time.Time `qwery:"updated_at"`
+    DeletedAt int       `qwery:"deleted_at"`  // Soft delete field (Unix timestamp)
 }
 ```
 
@@ -233,7 +233,7 @@ type Repository interface {
     // DoInTransaction executes a function in a transaction
     DoInTransaction(ctx context.Context, fn func(repo Repository) (any, error)) (any, error)
     // PublishOutbox publishes an outbox event
-    PublishOutbox(ctx context.Context, target PublisherTarget, topic string, payload sikat.JSONMap) error
+    PublishOutbox(ctx context.Context, target PublisherTarget, topic string, payload qwery.JSONMap) error
     // RetryOutbox retries an outbox event
     RetryOutbox(ctx context.Context) error
     // GetNoteRepository returns the NoteRepository instance
@@ -247,9 +247,13 @@ type Repository interface {
 // internal/core/port/outbound/cache.go
 package outbound
 
-import "github.com/redhajuanda/komon/cache"
-
-type Cache cache.Cache
+type Cache interface {
+    Get(ctx context.Context, key string, dest any, opts ...CacheOption) error
+    Set(ctx context.Context, key string, value any, opts ...CacheOption) error
+    Del(ctx context.Context, keys ...string) error
+    Exists(ctx context.Context, keys ...string) (bool, error)
+    // ... additional APIs: MGet/HSet/HGet/HGetAll/HM*Pipelined/SetMultiple/etc.
+}
 ```
 
 #### Messaging Interfaces
@@ -313,10 +317,23 @@ type Idempotency interface {
 // internal/core/port/outbound/dlock.go
 package outbound
 
-import "github.com/redhajuanda/komon/lock"
+type DLocker interface {
+    TryLock(ctx context.Context, id string, ttl time.Duration) error
+    Lock(ctx context.Context, id string, ttl time.Duration) error
+    Unlock(ctx context.Context, id string) error
+    Close() error
+}
+```
 
-// DLocker is a contract for distributed locking
-type DLocker lock.DLocker
+#### Warehouse Interface
+
+```go
+// internal/core/port/outbound/warehouse.go
+package outbound
+
+type Warehouse interface {
+    ListSchemas(ctx context.Context) ([]Schema, error)
+}
 ```
 
 ### Port Interface Best Practices
@@ -436,9 +453,9 @@ func (s *Service) ListNote(ctx context.Context, req *domain.NoteFilter, paginati
 
     res, err := repoNote.ListNote(ctx, req, pagination)
     if err != nil {
-        return nil, err
+        return nil, fail.Wrap(err)
     }
-    return res, err
+    return res, nil
 }
 ```
 
@@ -709,11 +726,11 @@ import (
 )
 
 type noteRepository struct {
-    sikat sikat.Runable
+    qwery qwery.Runable
 }
 
-func NewNoteRepository(sikat sikat.Runable) *noteRepository {
-    return &noteRepository{sikat: sikat}
+func NewNoteRepository(qwery qwery.Runable) *noteRepository {
+    return &noteRepository{qwery: qwery}
 }
 
 func (r *noteRepository) GetNoteByID(ctx context.Context, id string) (*domain.Note, error) {
@@ -732,7 +749,7 @@ func (r *noteRepository) GetNoteByID(ctx context.Context, id string) (*domain.No
         AND deleted_at = 0
     `
 
-    err := r.sikat.
+    err := r.qwery.
         RunRaw(query).
         WithParam("id", id).
         ScanStruct(&note).
@@ -757,7 +774,7 @@ func (r *noteRepository) CreateNote(ctx context.Context, note *domain.Note) erro
         VALUES ({{ .id }}, {{ .title }}, {{ .content }})
     `
 
-    err := r.sikat.
+    err := r.qwery.
         RunRaw(query).
         WithParams(note).
         Query(ctx)
@@ -780,7 +797,7 @@ func (r *noteRepository) UpdateNote(ctx context.Context, note *domain.Note) erro
         AND deleted_at = 0
     `
 
-    err := r.sikat.
+    err := r.qwery.
         RunRaw(query).
         WithParams(note).
         Query(ctx)
@@ -803,7 +820,7 @@ func (r *noteRepository) DeleteNote(ctx context.Context, id string) error {
         AND deleted_at = 0
     `
 
-    err := r.sikat.
+    err := r.qwery.
         RunRaw(query).
         WithParam("id", id).
         Query(ctx)
@@ -828,7 +845,7 @@ func (r *noteRepository) ListNote(ctx context.Context, req *domain.NoteFilter, p
         {{ if .search }} AND (title LIKE CONCAT('%', {{ .search }}, '%') OR content LIKE CONCAT('%', {{ .search }}, '%')) {{ end }}
     `
 
-    err := r.sikat.
+    err := r.qwery.
         RunRaw(query).
         WithParams(map[string]any{
             "search": req.Search,
@@ -866,14 +883,14 @@ func (r *noteRepository) ListNote(ctx context.Context, req *domain.NoteFilter, p
 #### 4. Repository Best Practices
 - Use `RunRaw()` with inline SQL queries
 - Write SQL queries directly in repository methods using multi-line strings
-- Use Sikat template syntax (`{{ .field }}`) for parameterized queries
+- Use Qwery template syntax (`{{ .field }}`) for parameterized queries
 - Always call `tracer.Trace(ctx)` and `defer span.End()` at the start of every method
 - Always use `WithPagination()` and `WithOrderBy()` when listing data with pagination
 - Include `WHERE deleted_at = 0` in all SELECT and UPDATE queries
 - Use `{{ if .field }}` for optional filter conditions
 
 #### 5. Performance
-- Use connection pooling for databases (handled by Sikat)
+- Use connection pooling for databases (handled by Qwery)
 - Optimize queries with appropriate indexes
 
 ## Error Handling
@@ -941,7 +958,7 @@ Event (Kafka/Redis) → Subscriber Handler → [Note Service] → [Repository] �
 1. **HTTP Handler** receives request, parses and validates DTO
 2. **DTO** `Transform()` builds the domain entity (generates ID with `ulid.Make()`)
 3. **Service** delegates to repository (applies business rules if any)
-4. **Repository** persists the entity to database via Sikat
+4. **Repository** persists the entity to database via Qwery
 5. **Response DTO** maps the domain entity back for the HTTP response
 
 ### Example Flow: Processing a Note Event (Subscriber)

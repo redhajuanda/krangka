@@ -179,6 +179,35 @@ func replaceProjectName(data []byte, filename string, projectName string) []byte
 	return result
 }
 
+// createAgentSymlinks creates commands and skills symlinks inside .claude and .cursor,
+// pointing to ../.agents/commands and ../.agents/skills respectively.
+// Go module zips strip symlinks, so these must be recreated after the file copy.
+func createAgentSymlinks(projectDir string) error {
+	symlinks := []struct {
+		dir    string
+		name   string
+		target string
+	}{
+		{".claude", "commands", filepath.Join("..", ".agents", "commands")},
+		{".claude", "skills", filepath.Join("..", ".agents", "skills")},
+		{".cursor", "commands", filepath.Join("..", ".agents", "commands")},
+		{".cursor", "skills", filepath.Join("..", ".agents", "skills")},
+	}
+
+	for _, sl := range symlinks {
+		dir := filepath.Join(projectDir, sl.dir)
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("failed to create %s directory: %v", sl.dir, err)
+		}
+		link := filepath.Join(dir, sl.name)
+		os.Remove(link)
+		if err := os.Symlink(sl.target, link); err != nil {
+			return fmt.Errorf("failed to create symlink %s: %v", link, err)
+		}
+	}
+	return nil
+}
+
 // moveToKrangkaFolder moves README.md and docs directory to .krangka folder and creates new README.md
 func moveToKrangkaFolder(projectDir, projectName string) error {
 	krangkaDir := filepath.Join(projectDir, ".krangka")
@@ -536,6 +565,11 @@ func initNew(cmd *cobra.Command, args []string) error {
 	// Post-processing: move README.md and docs to .krangka folder
 	if err := moveToKrangkaFolder(dir, projectName); err != nil {
 		log.Printf("Warning: failed to organize krangka files: %v", err)
+	}
+
+	// Post-processing: recreate .claude and .cursor symlinks stripped by Go module zip
+	if err := createAgentSymlinks(dir); err != nil {
+		log.Printf("Warning: failed to create agent symlinks: %v", err)
 	}
 
 	log.Printf("initialized %s in %s\n", dstMod, dir)

@@ -138,6 +138,7 @@ internal/
 │       ├── mock_dlock.go         # Distributed lock mock
 │       ├── mock_idempotency.go   # Idempotency mock
 │       ├── mock_repository.go    # Repository mock
+│       ├── mock_warehouse.go     # Warehouse mock (Snowflake)
 │       └── repositories/        # Mocks for repository ports
 │           └── mock_note_repository.go
 └── adapter/                      # Adapters (Ports & Adapters)
@@ -176,8 +177,11 @@ http/
 ├── http.go                       # HTTP server setup
 ├── middleware/                   # HTTP middleware
 │   ├── auth.go                   # Authentication middleware
+│   ├── cors.go                   # CORS middleware with wildcard subdomain support
+│   ├── logger.go                 # HTTP access logger middleware
 │   ├── recover.go                # Panic recovery middleware
 │   ├── request_id.go             # Request ID middleware
+│   ├── roles.go                  # Role-based route guard (OnlyRoles)
 │   └── security_header.go        # Security headers middleware
 ├── response/                     # HTTP response utilities
 │   ├── failed.go                 # Error response helpers
@@ -230,7 +234,7 @@ External systems that the application depends on.
 
 ```
 mariadb/
-├── conn.go                       # Database connection (Sikat client)
+├── conn.go                       # Database connection (Qwery client)
 ├── migrator.go                   # Migrator implementation
 ├── migrations/                   # Database migrations
 │   └── scripts/                  # Migration SQL files
@@ -256,7 +260,9 @@ redis/
 
 ```
 redisstream/
-└── conn.go                       # Redis Streams publisher/subscriber connection
+├── publisher.go                  # Redis Streams publisher adapter
+├── redis.go                      # Shared Redis client initialization
+└── subscriber.go                 # Redis Streams subscriber adapter (with NOGROUP recovery)
 ```
 
 Used for event-driven messaging via Redis Streams (Watermill).
@@ -265,10 +271,22 @@ Used for event-driven messaging via Redis Streams (Watermill).
 
 ```
 kafka/
-└── conn.go                       # Kafka publisher/subscriber connection
+├── publisher.go                  # Kafka publisher adapter
+└── subscriber.go                 # Kafka subscriber adapter
 ```
 
 Used for event-driven messaging via Kafka (Watermill).
+
+#### Snowflake Adapter (`internal/adapter/outbound/snowflake/`)
+
+```
+snowflake/
+├── conn.go                       # Snowflake connection and qwery warehouse setup
+├── queries/                      # Embedded Snowflake queries
+└── scema.go                      # Warehouse schema listing query
+```
+
+Used for warehouse/analytics use-cases via the outbound `Warehouse` port.
 
 #### Distributed Lock Adapter (`internal/adapter/outbound/dlock/`)
 
@@ -307,9 +325,10 @@ port/
 │   └── note.go                   # Note service interface
 └── outbound/                     # Outbound port interfaces
     ├── cache.go                  # Cache interface
-    ├── dlock.go                  # Distributed lock interface
+    ├── dlock.go                  # Distributed lock interface (time.Duration TTL)
     ├── idempotency.go            # Idempotency interface
     ├── publisher.go              # Message publisher interface (Watermill)
+    ├── warehouse.go              # Warehouse interface (Snowflake schemas)
     ├── repositories/             # Repository interfaces
     │   └── note.go               # Note repository interface
     ├── repository.go             # Main repository interface (includes outbox)
@@ -335,7 +354,7 @@ Common utilities used across the application.
 ```
 shared/
 ├── failure/                      # Application-level error definitions
-│   └── failure.go                # Typed failure constants (uses silib/fail)
+│   └── failure.go                # Typed failure constants (uses komon/fail)
 ├── libctx/                       # Context utilities
 │   ├── libctx.go                 # Context helpers (JWT claims, account, etc.)
 │   └── role.go                   # Role definitions
@@ -345,7 +364,7 @@ shared/
 
 ### Shared Components
 
-- **`failure/`**: Centralized typed error definitions using `silib/fail.Failure`. All domain-level errors (e.g., `ErrNoteNotFound`, `ErrNoteAlreadyExists`) are declared here with HTTP status codes and error codes
+- **`failure/`**: Centralized typed error definitions using `komon/fail.Failure`. All domain-level errors (e.g., `ErrNoteNotFound`, `ErrNoteAlreadyExists`) are declared here with HTTP status codes and error codes
 - **`libctx/`**: Context utilities for JWT claims, bearer tokens, account information, and role definitions
 - **`utils/`**: General utility functions
 
@@ -360,7 +379,7 @@ The main application entry point that:
 Go module definition containing:
 - Module name and version
 - Go version requirement
-- External dependencies
+- External dependencies (including Snowflake driver)
 
 ### `go.sum`
 Go module checksums for dependency verification.
@@ -413,7 +432,7 @@ External Systems → Inbound Adapters → Inbound Ports → Services → Outboun
 
 ### SQL Files
 - **Migrations**: `YYYYMMDDHHMMSS-description.sql` (stored in `internal/adapter/outbound/mariadb/migrations/scripts/`)
-- **Queries**: Inline SQL queries written directly in repository methods using `RunRaw()` with Sikat template syntax (`{{ .field }}`)
+- **Queries**: Inline SQL queries written directly in repository methods using `RunRaw()` with Qwery template syntax (`{{ .field }}`)
 
 ### Configuration Files
 - **Environment-specific**: `environment.yaml` (e.g., `development_main.yaml`)
@@ -437,6 +456,6 @@ External Systems → Inbound Adapters → Inbound Ports → Services → Outboun
 - Internal imports last
 
 ### 4. Error Handling
-- Use `shared/failure` for typed application errors (via `silib/fail`)
+- Use `shared/failure` for typed application errors (via `komon/fail`)
 - Wrap errors at every layer to preserve stack traces
 - Consistent error propagation using the `fail` package

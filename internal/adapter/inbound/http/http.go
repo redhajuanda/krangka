@@ -19,7 +19,7 @@ type HTTP struct {
 }
 
 type Handler interface {
-	RegisterRoutes(app fiber.Router)
+	RegisterRoutes(app *fiber.App)
 }
 
 // NewHTTP creates a new instance of HTTP server
@@ -47,17 +47,21 @@ func (h *HTTP) OnStart(ctx context.Context) error {
 		h.log.Errorf("failed to set trace provider: %v", err)
 	}
 
-	h.log.SkipSource().Infof("Starting HTTP server on port %s", h.cfg.Http.Port)
+	h.log.SkipSource().WithParam("environment", h.cfg.GetEnv()).Infof("Starting HTTP server on port %s", h.cfg.Http.Port)
 	h.log.SkipSource().Info("Server will gracefully shutdown on SIGINT/SIGTERM")
 
-	// Register all custom routes
-	h.RegisterRoutes()
 	// Register swagger routes
 	h.RegisterSwaggerRoutes()
 	// Register health check routes
 	h.RegisterHealthCheckRoutes()
+	// Register ping routes
+	h.RegisterPingRoutes()
 	// Register metrics routes
 	h.RegisterMetricsRoutes()
+	// Register all custom routes
+	h.RegisterRoutes()
+	// Register not found routes
+	h.RegisterNotFoundRoutes()
 
 	// Start HTTP server in goroutine so we can handle signals and graceful shutdown
 	go func() {
@@ -65,7 +69,7 @@ func (h *HTTP) OnStart(ctx context.Context) error {
 			EnablePrintRoutes:     h.cfg.Http.EnablePrintRoutes,
 			DisableStartupMessage: h.cfg.Http.DisableStartupMessage,
 		}); err != nil {
-			h.log.Errorf("Server stopped: %v", err)
+			h.log.SkipSource().Errorf("Server stopped: %v", err)
 		}
 	}()
 

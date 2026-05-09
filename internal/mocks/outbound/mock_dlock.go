@@ -12,6 +12,7 @@ package mocks_outbound
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	gomock "go.uber.org/mock/gomock"
 )
@@ -55,7 +56,7 @@ func (mr *MockDLockerMockRecorder) Close() *gomock.Call {
 }
 
 // Lock mocks base method.
-func (m *MockDLocker) Lock(ctx context.Context, id string, ttl int) error {
+func (m *MockDLocker) Lock(ctx context.Context, id string, ttl time.Duration) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Lock", ctx, id, ttl)
 	ret0, _ := ret[0].(error)
@@ -69,7 +70,7 @@ func (mr *MockDLockerMockRecorder) Lock(ctx, id, ttl any) *gomock.Call {
 }
 
 // TryLock mocks base method.
-func (m *MockDLocker) TryLock(ctx context.Context, id string, ttl int) error {
+func (m *MockDLocker) TryLock(ctx context.Context, id string, ttl time.Duration) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TryLock", ctx, id, ttl)
 	ret0, _ := ret[0].(error)

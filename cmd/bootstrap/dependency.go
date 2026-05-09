@@ -44,7 +44,7 @@ type Dependency struct {
 	qweryMain   ResourceClosable[*mariadb.Qwery]
 	qweryWorker ResourceClosable[*mariadb.Qwery]
 	redis       ResourceClosable[*redis.Redis]
-	dlocker     ResourceClosable[*dlock.DLock]
+	dlocker     ResourceClosable[*dlock.Dlock]
 	idempotency ResourceClosable[*idempotency.Idempotency]
 
 	publisherRedisstream ResourceClosable[*redisstream.Publisher]
@@ -102,7 +102,7 @@ func (d *Dependency) GetLogger() logger.Logger {
 func (d *Dependency) GetRedis() *redis.Redis {
 	return d.redis.Resolve(func() *redis.Redis {
 		cfg := d.GetConfig()
-		return redis.New(
+		return redis.NewRedis(
 			redis.Param{
 				Sentinel:     cfg.Cache.Redis.Sentinel,
 				MasterName:   cfg.Cache.Redis.MasterName,
@@ -183,7 +183,7 @@ func (d *Dependency) GetPublisherRedisstream() *redisstream.Publisher {
 			},
 			DefaultMaxlen: cfg.Event.Redisstream.Publisher.DefaultMaxlen,
 		}
-		return outboundredisstream.NewPublisher(param)
+		return outboundredisstream.NewPublisher(param, d.GetLogger())
 	})
 }
 
@@ -236,7 +236,7 @@ func (d *Dependency) GetSubscriberRedisstream(subscriberID string) *redisstream.
 			},
 			ConsumerGroup: cfgSubscriber.ConsumerGroup,
 		}
-		return outboundredisstream.NewSubscriber(param)
+		return outboundredisstream.NewSubscriber(param, d.GetLogger())
 	})
 }
 
@@ -276,8 +276,8 @@ func (d *Dependency) GetIdempotency() *idempotency.Idempotency {
 }
 
 // GetDLocker resolves and returns the dlocker dependency
-func (d *Dependency) GetDLocker() *dlock.DLock {
-	return d.dlocker.Resolve(func() *dlock.DLock {
+func (d *Dependency) GetDLocker() *dlock.Dlock {
+	return d.dlocker.Resolve(func() *dlock.Dlock {
 		cfg := d.GetConfig()
 		param := dlock.Param{
 			Sentinel:     cfg.Cache.Redis.Sentinel,
@@ -289,7 +289,7 @@ func (d *Dependency) GetDLocker() *dlock.DLock {
 			MinIdleConns: cfg.Cache.Redis.MinIdleConns,
 			PoolSize:     cfg.Cache.Redis.PoolSize,
 		}
-		return dlock.New(param, d.GetLogger())
+		return dlock.NewDlock(param, d.GetLogger())
 	})
 }
 

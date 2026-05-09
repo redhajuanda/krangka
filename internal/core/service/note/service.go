@@ -11,6 +11,7 @@ import (
 	"github.com/redhajuanda/krangka/configs"
 	"github.com/redhajuanda/krangka/internal/core/domain"
 	"github.com/redhajuanda/krangka/internal/core/port/outbound"
+	"github.com/redhajuanda/krangka/shared/constants"
 	"github.com/redhajuanda/qwery"
 )
 
@@ -43,7 +44,7 @@ func (s *Service) GetNoteByID(ctx context.Context, id string) (*domain.Note, err
 
 	note, err := repoNote.GetNoteByID(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, fail.Wrap(err)
 	}
 	return note, nil
 
@@ -69,7 +70,7 @@ func (s *Service) CreateNote(ctx context.Context, note *domain.Note) error {
 		}
 
 		// publish event using outbox pattern
-		err = repo.PublishOutbox(ctx, outbound.PublisherTargetKafka, "note.created", qwery.JSONMap{
+		err = repo.PublishOutbox(ctx, outbound.PublisherTargetKafka, constants.TopicNoteCreated, qwery.JSONMap{
 			"id":         note.ID,
 			"title":      note.Title,
 			"content":    note.Content,
@@ -109,7 +110,7 @@ func (s *Service) UpdateNote(ctx context.Context, note *domain.Note) error {
 		}
 
 		// publish event using outbox pattern
-		err = repo.PublishOutbox(ctx, outbound.PublisherTargetKafka, "note.updated", qwery.JSONMap{
+		err = repo.PublishOutbox(ctx, outbound.PublisherTargetKafka, constants.TopicNoteUpdated, qwery.JSONMap{
 			"id":         note.ID,
 			"title":      note.Title,
 			"content":    note.Content,
@@ -149,7 +150,7 @@ func (s *Service) DeleteNote(ctx context.Context, id string) error {
 		}
 
 		// publish event using outbox pattern
-		err = repo.PublishOutbox(ctx, outbound.PublisherTargetKafka, "note.deleted", qwery.JSONMap{
+		err = repo.PublishOutbox(ctx, outbound.PublisherTargetKafka, constants.TopicNoteDeleted, qwery.JSONMap{
 			"id":         id,
 			"deleted_at": time.Now().Unix(),
 		})
@@ -181,7 +182,7 @@ func (s *Service) ListNote(ctx context.Context, req *domain.NoteFilter, paginati
 
 	notes, err := repoNote.ListNote(ctx, req, pagination)
 	if err != nil {
-		return nil, err
+		return nil, fail.Wrap(err)
 	}
 	return notes, nil
 

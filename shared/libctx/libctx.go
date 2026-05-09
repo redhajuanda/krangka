@@ -19,30 +19,9 @@ func (s Stringable) String() string {
 
 type JwtClaims struct {
 	*jwt.StandardClaims
-	Aud         string     `json:"aud"`
-	BranchID    Stringable `json:"branchId"`
-	BranchName  string     `json:"branchName"`
-	Client      string     `json:"client"`
-	DeviceID    string     `json:"deviceId"`
-	DisplayName string     `json:"displayName"`
-	Email       string     `json:"email"`
-	EmployeeID  Stringable `json:"employeeId"`
-	Exp         int        `json:"exp"`
-	Group       string     `json:"group"`
-	Groups      []string   `json:"groups"`
-	Iat         int        `json:"iat"`
-	Iss         string     `json:"iss"`
-	Nik         string     `json:"nik"`
-	OtpVerified bool       `json:"otpVerified"`
-	Policy      string     `json:"policy"`
-	RoleID      Stringable `json:"roleId"`
-	RoleName    string     `json:"roleName"`
-	Roles       []string   `json:"roles"`
-	Scopes      string     `json:"scopes"`
-	Sub         string     `json:"sub"`
-	Type        string     `json:"type"`
-	UserID      Stringable `json:"userId"`
-	Username    string     `json:"username"`
+	Aud      string     `json:"aud"`
+	UserID   Stringable `json:"user_id"`
+	Username string     `json:"username"`
 }
 
 // Valid implements jwt.Claims interface to prevent nil pointer dereference

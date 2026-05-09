@@ -81,7 +81,7 @@ mock:
 		go install github.com/golang/mock/mockgen@latest; \
 	fi
 	@go generate ./...
-
+	
 # command to run tests
 # example: make test
 .PHONY: test
@@ -92,7 +92,6 @@ test:
 # example: make dependency
 .PHONY: dependency
 dependency:
-	@echo "> Installing the server dependencies ..."
 	@go mod vendor
 
 # command to clean
@@ -100,6 +99,11 @@ dependency:
 .PHONY: clean
 clean:
 	if [ -f ${BINARY} ] ; then rm ${BINARY} ; fi
+
+# command to list all symlinks
+# example: make symlinks
+links:
+	@find . -type l -exec ls -l {} \;
 
 # Docker Compose commands
 # The project name is defined in deployment/development_main.yaml using the 'name' field
