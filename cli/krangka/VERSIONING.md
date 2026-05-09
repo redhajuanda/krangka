@@ -2,23 +2,27 @@
 
 This directory is a nested Go module: `github.com/redhajuanda/krangka/cli/krangka`.
 
-When releasing a new CLI version, use module-scoped git tags so `go install ...@latest` resolves to semver instead of a pseudo-version.
+## Dual tags on release
 
-## Required tag format
+Put **both** tags on the **same commit** so the root app and the CLI module each get a proper semver from Git:
 
-- `cli/krangka/vX.Y.Z`
+| Tag | Applies to |
+|-----|------------|
+| `vX.Y.Z` | Root module `github.com/redhajuanda/krangka` |
+| `cli/krangka/vX.Y.Z` | This nested module (`go install .../cli/krangka@latest`) |
 
 Example:
 
 ```bash
-git tag cli/krangka/v1.0.12
-git push origin cli/krangka/v1.0.12
+git tag -a v1.0.5 -m "Release v1.0.5"
+git tag -a cli/krangka/v1.0.5 -m "krangka CLI module v1.0.5"
+git push origin v1.0.5 cli/krangka/v1.0.5
 ```
 
-## Why this matters
+## Why the nested tag matters
 
-- Root tag `vX.Y.Z` applies to the root module, not this nested module.
-- Without `cli/krangka/vX.Y.Z`, Go may resolve `@latest` to a pseudo-version like `v0.0.0-...`.
+- A root-only tag `vX.Y.Z` does **not** version the nested `cli/krangka` path for Go’s module proxy.
+- Without `cli/krangka/vX.Y.Z`, `go install github.com/redhajuanda/krangka/cli/krangka@latest` may resolve to a pseudo-version like `v0.0.0-...`.
 
 ## Verification commands
 
