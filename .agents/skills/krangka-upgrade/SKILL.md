@@ -41,13 +41,22 @@ Upgrade krangka framework (boilerplate) from the current version to the latest b
 For each version in the upgrade path (in order):
 
 1. **Read** the reference file: `<references-dir>/vX.Y.Z.md` (same directory resolved in step 2)
-2. **Apply** all changes described:
-   - **Added**: Create new files, add new code/config as specified
+2. **CRITICAL — Clone the exact upstream version before applying any code change.** Reference files describe changes at a high level (e.g. "add function `Blabla()`", "modify `Bootstrap()` to register X"). The actual implementation can vary in signature, body, imports, ordering, and surrounding context. **Never** assume or infer how to implement the change — always read the real source from the upstream boilerplate at that exact version:
+   - Clone (or `git fetch`) the boilerplate at the target tag into a scratch directory:
+     ```bash
+     git clone --depth 1 --branch vX.Y.Z https://github.com/redhajuanda/krangka /tmp/krangka-vX.Y.Z
+     ```
+     (or reuse an existing clone and `git checkout vX.Y.Z`)
+   - For every **Added** / **Modified** item in the reference file, open the corresponding file in `/tmp/krangka-vX.Y.Z/...` and copy the **exact** code as it appears in that version (function bodies, imports, comments, ordering).
+   - Also diff against the **previous** tag (`vPREV`) when the reference says "modify": `git -C /tmp/krangka-vX.Y.Z diff vPREV vX.Y.Z -- <path>` to see the precise edits, not just the final state.
+   - If the project has diverged (renames, custom code), reconcile manually — but the source of truth for what krangka itself changed is **always** the upstream tag, never the reference summary alone.
+3. **Apply** all changes described, using the upstream source as the authoritative implementation:
+   - **Added**: Create new files / code with the exact contents from the upstream tag
    - **Removed**: Delete files or remove code as specified
-   - **Modified**: Update files, dependencies, config as specified
-   - **Dependencies**: Update `go.mod` (e.g. qwery, komon versions) and run `go mod tidy`
-3. **Follow** migration notes (commands to run, manual steps)
-4. **Update** `.krangka/.VERSION` to the version just applied (only after successfully applying that version)
+   - **Modified**: Apply the upstream diff, adapting only where the project legitimately diverges
+   - **Dependencies**: Update `go.mod` (e.g. qwery, komon versions) to match upstream `go.mod` at that tag and run `go mod tidy`
+4. **Follow** migration notes (commands to run, manual steps)
+5. **Update** `.krangka/.VERSION` to the version just applied (only after successfully applying that version)
 
 ### 5. Finalize
 
@@ -68,6 +77,7 @@ Each `references/vX.Y.Z.md` should describe changes from the **previous** versio
 
 - Apply versions **in order** — do not skip versions
 - If a reference file is missing for a version in the path, stop and report the gap
+- **Never invent or paraphrase code from a reference file.** Always clone `github.com/redhajuanda/krangka` at the target tag and copy the exact implementation from there.
 - Prefer applying changes exactly as described; avoid inferring beyond the reference
 - After dependency changes, always run `go mod tidy`
 - If the project has diverged from the boilerplate (custom files, removed files), adapt: skip or note conflicts; do not blindly overwrite user code
