@@ -243,8 +243,8 @@ github.com/redhajuanda/komon v1.0.4 h1:vlggfOV1EaKRqbF+k7A3fmFsXKMRmeeVt8+n9a2En
 github.com/redhajuanda/komon v1.0.4/go.mod h1:Cp3lfrlPS3M2774gQSAnci4tX3onKMjPDOLWIMIkleA=
 github.com/redhajuanda/kuysor v1.0.8 h1:oc4O/W7qanndkWG2g9aon27dwSLbKh7pn09MunlTLnI=
 github.com/redhajuanda/kuysor v1.0.8/go.mod h1:BNV0/1cfWg3jz45blY19l4AdWXtEp5zncDT5P7hIn8c=
-github.com/redhajuanda/qwery v1.0.3 h1:xzsW2+I+ddFO2u0H3w9WOPF3fzNN4v7mkc7jWYqrl3w=
-github.com/redhajuanda/qwery v1.0.3/go.mod h1:TFV2BZia1DoHQ8VJvRrMVjxTVTZF1Yt0cAVq/23J68E=
+github.com/redhajuanda/qwery v1.0.4 h1:pbkmhRdUDXwhJn0bqTXkXh0voXFdKlsFGYjjit7KZ38=
+github.com/redhajuanda/qwery v1.0.4/go.mod h1:LRjLI3LnScBl6odfcHKTRDPU7cAufjq6ognHShvOUCk=
 github.com/redis/go-redis/extra/rediscmd/v9 v9.19.0 h1:QL3vQTj64ZQpxiDZx6bFYS7oN37EdHHqiYGz3grgTRI=
 github.com/redis/go-redis/extra/rediscmd/v9 v9.19.0/go.mod h1:kGroOkFJzE2Si+mojCi3PCvuAnGnzEh1FAzy1Oh9mI8=
 github.com/redis/go-redis/extra/redisotel/v9 v9.19.0 h1:yXeFe+EFMUirnzzy8MI5iazoqlpBdzVC6pk+K2Mu7do=

@@ -17,7 +17,7 @@ require (
 	github.com/oklog/ulid/v2 v2.1.1
 	github.com/prometheus/client_golang v1.23.0
 	github.com/redhajuanda/komon v1.0.4
-	github.com/redhajuanda/qwery v1.0.3
+	github.com/redhajuanda/qwery v1.0.4
 	github.com/redis/go-redis/v9 v9.19.0
 	github.com/rubenv/sql-migrate v1.8.0
 	github.com/sirupsen/logrus v1.9.3
